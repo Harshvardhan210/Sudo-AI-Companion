@@ -17,6 +17,10 @@ DESIGN_WIDTH = 380          # size of the design in the HTML (don't change)
 DESIGN_HEIGHT = 540
 WINDOW_WIDTH = int(DESIGN_WIDTH * ZOOM)
 WINDOW_HEIGHT = int(DESIGN_HEIGHT * ZOOM)
+# Text command mode (search bar) uses a bigger, normal-size window
+TEXT_ZOOM = 1.0
+TEXT_WIDTH = 400
+TEXT_HEIGHT = 260
 SCREEN_MARGIN = 12          # gap from the right edge of the screen
 VERTICAL_POSITION = "center"  # "center", "top" or "bottom"
 # ----------------------------------------------------------------------------
@@ -41,6 +45,10 @@ class WindowController(QObject):
         handle = self._window.windowHandle()
         if handle is not None:
             handle.startSystemMove()
+
+    @Slot(bool)
+    def setTextMode(self, enabled):
+        self._window.set_text_mode(enabled)
 
     @Slot()
     def closeApp(self):
@@ -69,6 +77,7 @@ class MiniAssistantWindow(QMainWindow):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setStyleSheet("background: transparent;")
 
+        self.current_zoom = ZOOM
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.move_to_right_side()
 
@@ -78,7 +87,7 @@ class MiniAssistantWindow(QMainWindow):
         self.web_view.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.web_view.setStyleSheet("background: transparent;")
         self.web_view.page().setBackgroundColor(QColor(0, 0, 0, 0))
-        self.web_view.setZoomFactor(ZOOM)
+        self.web_view.setZoomFactor(self.current_zoom)
         self.setCentralWidget(self.web_view)
 
         settings = self.web_view.settings()
@@ -119,7 +128,34 @@ class MiniAssistantWindow(QMainWindow):
 
     def on_load_finished(self, success):
         print("HTML loaded:", success)
-        self.web_view.setZoomFactor(ZOOM)  # keep the small size after loading
+        self.web_view.setZoomFactor(self.current_zoom)  # keep the chosen size after loading
+
+    def set_text_mode(self, enabled):
+        """Switch between the small robot window and the bigger search-bar window."""
+        geo = self.geometry()
+        right_edge = geo.x() + geo.width()
+        center_y = geo.y() + geo.height() // 2
+
+        if enabled:
+            self.current_zoom = TEXT_ZOOM
+            width, height = TEXT_WIDTH, TEXT_HEIGHT
+        else:
+            self.current_zoom = ZOOM
+            width, height = WINDOW_WIDTH, WINDOW_HEIGHT
+
+        self.web_view.setZoomFactor(self.current_zoom)
+        self.resize(width, height)
+
+        # Keep the right edge in place and stay inside the screen.
+        area = QApplication.primaryScreen().availableGeometry()
+        x = max(area.left(), min(right_edge - width, area.right() - width + 1))
+        y = max(area.top(), min(center_y - height // 2, area.bottom() - height + 1))
+        self.move(x, y)
+
+        if enabled:
+            self.activateWindow()
+            self.raise_()
+            self.web_view.setFocus()
 
     def move_to_right_side(self):
         """Place the window on the right edge of the primary screen."""

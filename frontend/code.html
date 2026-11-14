@@ -10,6 +10,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <style>
+    #text-input {
+      caret-color: #38bdf8;
+      color: #e0f2fe;
+      text-shadow: 0 0 8px rgba(56, 189, 248, 0.55);
+    }
+    #text-input::placeholder {
+      color: rgba(125, 211, 252, 0.45);
+      text-shadow: none;
+    }
+    #text-reply::-webkit-scrollbar { width: 6px; }
+    #text-reply::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.45); border-radius: 999px; }
+    body.text-mode #btn-close {
+      width: 28px !important;
+      height: 28px !important;
+      font-size: 14px !important;
+    }
     html, body {
       background: transparent !important;
     }
@@ -522,6 +538,28 @@
 <span id="hint-text">Tap anywhere to play with me!</span>
 </div>
 </main>
+
+<!-- TEXT COMMAND MODE: search bar (double-click the robot to open, double-click the bar to go back) -->
+<div id="text-panel" style="display:none" class="absolute inset-0 flex-col items-stretch px-3 pt-9 pb-3 z-10">
+<div id="text-grip" title="Drag to move" class="absolute top-0 left-0 right-10 h-8 flex items-center justify-center cursor-move">
+<div class="w-14 h-2 rounded-full ceramic-chassis border border-white shadow-[0_2px_5px_rgba(15,23,42,0.25)]"></div>
+</div>
+<!-- Search bar: same ceramic casing + dark visor screen as the robot head -->
+<div id="text-bar" class="relative rounded-full p-2 ceramic-chassis border border-white shadow-[0_8px_18px_-8px_rgba(15,23,42,0.45)]">
+<div class="absolute top-1 left-10 right-10 h-2.5 bg-gradient-to-b from-white to-transparent rounded-full pointer-events-none"></div>
+<div class="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-2.5 rounded-full bg-white border border-slate-200 shadow-[0_2px_6px_rgba(15,23,42,0.1),0_0_8px_rgba(56,189,248,0.6)] flex items-center justify-center">
+<div class="w-2.5 h-1 bg-cyan-400 rounded-full animate-pulse"></div>
+</div>
+<div class="visor-glass rounded-full border border-slate-800/80 flex items-center gap-3 px-5 h-12 relative overflow-hidden">
+<span class="material-symbols-outlined text-cyan-400 text-[26px]" style="text-shadow:0 0 10px #38bdf8">search</span>
+<input id="text-input" type="text" autocomplete="off" spellcheck="false" placeholder="Type a command..." class="flex-1 min-w-0 bg-transparent outline-none text-[17px] font-medium" style="user-select:text">
+</div>
+</div>
+<!-- Reply card: same ceramic + visor look -->
+<div id="text-reply-wrap" style="display:none" class="mt-3 rounded-[28px] p-2 ceramic-chassis border border-white shadow-[0_8px_18px_-8px_rgba(15,23,42,0.45)]">
+<div id="text-reply" class="visor-glass rounded-[22px] border border-slate-800/80 px-4 py-3 text-[14px] leading-snug text-cyan-100 overflow-y-auto" style="max-height:130px; white-space:pre-wrap; user-select:text"></div>
+</div>
+</div>
 <!-- Qt WebChannel library -->
 <script
     src="./qwebchannel.js"
@@ -1193,6 +1231,7 @@ function activateListeningVisuals() {
         const busy =
           isListening ||
           isInteracting ||
+          textMode ||
           currentEmotion === 'searching' ||
           (Date.now() - lastBridgeEvent) < 8000;
         if (!busy) triggerRandomEmotion();
@@ -1267,11 +1306,13 @@ function activateListeningVisuals() {
 
     function handleBridgeCommand(command) {
       lastBridgeEvent = Date.now();
+      if (textMode) return;   // no robot animation in text mode
       startTaskAnimation('WORKING...', 'Working on: ' + command);
     }
 
     function handleBridgeResponse(response) {
       lastBridgeEvent = Date.now();
+      if (textMode) { showTextReply(response); return; }
       stopTaskAnimation();
       hintIcon.textContent = '💬';
       hintText.textContent = response;
@@ -1315,5 +1356,81 @@ function activateListeningVisuals() {
     });
 
     window.addEventListener('mouseup', () => { dragStart = null; });
+
+    // ------------------------------------------------------------------
+    // TEXT COMMAND MODE (double-click robot <-> search bar)
+    // ------------------------------------------------------------------
+    let textMode = false;
+    const textPanel = document.getElementById('text-panel');
+    const textInput = document.getElementById('text-input');
+    const textReply = document.getElementById('text-reply');
+
+    function showTextReply(message) {
+      const text = String(message || '').trim();
+      textReply.textContent = text;
+      document.getElementById('text-reply-wrap').style.display = text ? 'block' : 'none';
+      textReply.scrollTop = 0;
+    }
+
+    function setTextMode(on) {
+      if (on === textMode) return;
+      textMode = on;
+
+      if (on) {
+        // Leave voice mode: stop the microphone and any animation
+        continuousListening = false;
+        if (bridgeReady && assistantBridge) assistantBridge.stopListening();
+        deactivateListeningMode();
+        stopTaskAnimation();
+        returnToCalm();
+      }
+
+      document.body.classList.toggle('text-mode', on);
+      interactiveZone.style.display = on ? 'none' : '';
+      textPanel.style.display = on ? 'flex' : 'none';
+
+      // Make the window bigger for typing (or small again for the robot)
+      if (windowController) windowController.setTextMode(on);
+
+      if (on) {
+        showTextReply('');
+        setTimeout(() => textInput.focus(), 200);
+      }
+    }
+
+    // Double-click the robot -> text mode (not when double-clicking Mic / Stop)
+    interactiveZone.addEventListener('dblclick', (e) => {
+      if (e.target.closest('#btn-mic') || e.target.closest('#btn-stop')) return;
+      setTextMode(true);
+    });
+
+    // Double-click the search bar -> back to the robot
+    textPanel.addEventListener('dblclick', () => setTextMode(false));
+
+    // Enter sends the command, Escape goes back to the robot
+    textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        setTextMode(false);
+        return;
+      }
+      if (e.key !== 'Enter') return;
+
+      const command = textInput.value.trim();
+      if (!command) return;
+
+      if (!bridgeReady || !assistantBridge) {
+        showTextReply('Python connection unavailable.');
+        return;
+      }
+
+      textInput.value = '';
+      showTextReply('Working on it...');
+      assistantBridge.submitTextCommand(command);
+    });
+
+    // Drag the window by the grip at the top of the search bar
+    document.getElementById('text-grip').addEventListener('mousedown', (e) => {
+      if (e.button === 0 && windowController) windowController.startMove();
+    });
   </script>
 </body></html>

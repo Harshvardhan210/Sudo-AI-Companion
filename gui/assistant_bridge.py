@@ -1,10 +1,16 @@
+import re
 import time
 
 from PySide6.QtCore import QObject, QThread, QTimer, Signal, Slot
 
-from assistant.voice_input import listen_continuously
+from assistant.voice_input import listen_continuously, WAKE_WORDS
 from assistant.command_handler import process_command
 from assistant.voice_output import speak
+
+
+# Speak the answer aloud for commands typed in the search bar?
+# (False = show the reply as text only, so typing is never blocked by speech)
+SPEAK_TEXT_REPLIES = False
 
 
 class VoiceWorker(QThread):
@@ -98,7 +104,27 @@ class AssistantBridge(QObject):
         worker = self.voice_worker
         QTimer.singleShot(60, lambda: self._execute(command, worker))
 
-    def _execute(self, command, worker):
+    @Slot(str)
+    def submitTextCommand(self, text):
+        """Command typed in the search bar (text command mode)."""
+        command = (text or "").strip()
+
+        # Allow typing the wake word too: "sudo open notepad"
+        parts = command.split(None, 1)
+        if parts and re.sub(r"[^\w]", "", parts[0].lower()) in WAKE_WORDS:
+            command = parts[1].strip() if len(parts) > 1 else ""
+
+        if not command:
+            self.assistantResponse.emit("Please type a command.")
+            return
+
+        self.commandRecognized.emit(command)
+        QTimer.singleShot(
+            60,
+            lambda: self._execute(command, None, SPEAK_TEXT_REPLIES)
+        )
+
+    def _execute(self, command, worker, speak_reply=True):
         response = "Sorry, something went wrong."
 
         try:
@@ -109,7 +135,11 @@ class AssistantBridge(QObject):
             print("Command error:", error)
             self.assistantResponse.emit(response)
 
-        QTimer.singleShot(60, lambda: self._speak_response(response, worker))
+        if speak_reply:
+            QTimer.singleShot(
+                60,
+                lambda: self._speak_response(response, worker)
+            )
 
     def _speak_response(self, response, worker):
         try:

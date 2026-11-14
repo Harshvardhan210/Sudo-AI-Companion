@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cute Futuristic AI Robot</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Ambient background grid & glow - Light Theme */
+    .cyber-grid {
+      background-size: 36px 36px;
+      background-image: 
+        linear-gradient(to right, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+    }
+
+    /* Floating head animation */
+    @keyframes floatHead {
+      0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+      50% {
+        transform: translateY(-10px) rotate(0.6deg);
+      }
+    }
+
+    /* Front Paws / Floating hands resting in front */
+    @keyframes floatPawLeft {
+      0%, 100% {
+        transform: translateY(0px) rotate(-3deg);
+      }
+      50% {
+        transform: translateY(-6px) rotate(-1deg);
+      }
+    }
+
+    @keyframes floatPawRight {
+      0%, 100% {
+        transform: translateY(-1px) rotate(3deg);
+      }
+      50% {
+        transform: translateY(-7px) rotate(1deg);
+      }
+    }
+
+    /* Soft shadow pulsing under character */
+    @keyframes shadowPulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.22;
+      }
+      50% {
+        transform: scale(0.85);
+        opacity: 0.12;
+      }
+    }
+
+    /* Ambient Aura Glow */
+    @keyframes auraGlow {
+      0%, 100% {
+        opacity: 0.65;
+        transform: scale(0.96);
+      }
+      50% {
+        opacity: 0.95;
+        transform: scale(1.06);
+      }
+    }
+
+    /* Rapid Alternate Paw Typing Animation */
+    @keyframes rapidTypePawLeft {
+      0%, 100% {
+        transform: translateY(8px) translateX(6px) rotate(-4deg) scale(0.96);
+      }
+      25% {
+        transform: translateY(17px) translateX(8px) rotate(-8deg) scale(1.03);
+      }
+      50% {
+        transform: translateY(7px) translateX(5px) rotate(-3deg) scale(0.97);
+      }
+      75% {
+        transform: translateY(11px) translateX(7px) rotate(-6deg) scale(1);
+      }
+    }
+
+    @keyframes rapidTypePawRight {
+      0%, 100% {
+        transform: translateY(6px) translateX(-5px) rotate(3deg) scale(0.97);
+      }
+      25% {
+        transform: translateY(10px) translateX(-7px) rotate(5deg) scale(1);
+      }
+      50% {
+        transform: translateY(18px) translateX(-9px) rotate(9deg) scale(1.04);
+      }
+      75% {
+        transform: translateY(8px) translateX(-6px) rotate(4deg) scale(0.96);
+      }
+    }
+
+    /* Holographic Keyboard Float & Key Ripple Animation */
+    @keyframes holoFloat {
+      0%, 100% {
+        transform: translateY(0px) rotateX(24deg) scale(1);
+      }
+      50% {
+        transform: translateY(-3px) rotateX(22deg) scale(1.02);
+      }
+    }
+
+    @keyframes sparkFloat1 {
+      0% {
+        transform: translateY(0) scale(0.8);
+        opacity: 0.9;
+      }
+      100% {
+        transform: translateY(-16px) translateX(-6px) scale(0);
+        opacity: 0;
+      }
+    }
+
+    @keyframes sparkFloat2 {
+      0% {
+        transform: translateY(0) scale(0.8);
+        opacity: 0.9;
+      }
+      100% {
+        transform: translateY(-16px) translateX(6px) scale(0);
+        opacity: 0;
+      }
+    }
+
+    /* Thought Cloud Floating & Pulse */
+    @keyframes thoughtFloat {
+      0%, 100% {
+        transform: translateY(0px) scale(1);
+      }
+      50% {
+        transform: translateY(-6px) scale(1.02);
+      }
+    }
+
+    /* Soundwave / waveform line oscillation */
+    @keyframes soundWave {
+      0%, 100% {
+        height: 6px;
+      }
+      50% {
+        height: 20px;
+      }
+    }
+
+    /* ECG / Data Line scanning effect */
+    @keyframes dataPulseLine {
+      0% {
+        stroke-dashoffset: 240;
+      }
+      100% {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    /* Listening Pulsing Waves for Mic button */
+    @keyframes pulseRing {
+      0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+      50% {
+        transform: scale(1.3);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+    }
+
+    .mic-active-ring {
+      animation: pulseRing 1.6s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+    }
+
+    .animate-float-head {
+      animation: floatHead 4.4s ease-in-out infinite;
+    }
+
+    .animate-paw-left {
+      animation: floatPawLeft 3.6s ease-in-out infinite;
+    }
+
+    .animate-paw-right {
+      animation: floatPawRight 3.8s ease-in-out infinite;
+    }
+
+    .animate-shadow {
+      animation: shadowPulse 4.4s ease-in-out infinite;
+    }
+
+    .animate-aura {
+      animation: auraGlow 4s ease-in-out infinite;
+    }
+
+    /* Searching Specific Active Classes */
+    .animate-typing-paw-l {
+      animation: rapidTypePawLeft 0.26s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+    }
+
+    .animate-typing-paw-r {
+      animation: rapidTypePawRight 0.26s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+    }
+
+    .animate-holo-keyboard {
+      animation: holoFloat 2.6s ease-in-out infinite;
+    }
+
+    .animate-spark-left {
+      animation: sparkFloat1 0.35s ease-out infinite;
+    }
+
+    .animate-spark-right {
+      animation: sparkFloat2 0.35s ease-out infinite 0.17s;
+    }
+
+    .animate-thought-bubble {
+      animation: thoughtFloat 3.2s ease-in-out infinite;
+    }
+
+    /* Deadpan Serious Face (😑 style flat bars) */
+    .deadpan-eye-bar {
+      width: 44px !important;
+      height: 7px !important;
+      border-radius: 9999px !important;
+      background: #38bdf8 !important;
+      box-shadow: 0 0 14px #38bdf8, 0 0 24px rgba(6, 182, 212, 0.9), inset 0 0 6px #ffffff !important;
+      transform: none !important;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* Ceramic chassis & screen styling */
+    .ceramic-chassis {
+      background: linear-gradient(145deg, #ffffff 0%, #f8fafc 45%, #e2e8f0 100%);
+      box-shadow: 
+        0 24px 60px -8px rgba(15, 23, 42, 0.16),
+        0 8px 24px -4px rgba(14, 165, 233, 0.15),
+        inset 0 2px 4px rgba(255, 255, 255, 1),
+        inset 0 -4px 10px rgba(203, 213, 225, 0.6);
+    }
+
+    .visor-glass {
+      background: radial-gradient(circle at 50% 25%, #0f172a 0%, #020617 92%);
+      box-shadow: 
+        inset 0 2px 6px rgba(255, 255, 255, 0.14),
+        inset 0 -6px 20px rgba(0, 0, 0, 0.95);
+    }
+
+    .eye-glow {
+      box-shadow: 0 0 18px #38bdf8, 0 0 35px rgba(56, 189, 248, 0.8), inset 0 0 8px #ffffff;
+    }
+
+    .happy-eye {
+      border-radius: 50px 50px 0 0 !important;
+      height: 20px !important;
+      border-top: 6px solid #67e8f9 !important;
+      border-left: 6px solid #67e8f9 !important;
+      border-right: 6px solid #67e8f9 !important;
+      background: transparent !important;
+      box-shadow: 0 -4px 18px rgba(56, 189, 248, 0.9) !important;
+    }
+
+    .cheek-glow {
+      box-shadow: 0 0 14px rgba(244, 114, 182, 0.65);
+    }
+
+    .paw-ceramic {
+      background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #e2e8f0 100%);
+      box-shadow: 
+        0 12px 24px -4px rgba(15, 23, 42, 0.18),
+        0 0 14px rgba(56, 189, 248, 0.2),
+        inset 0 2px 3px rgba(255, 255, 255, 1),
+        inset 0 -2px 6px rgba(203, 213, 225, 0.5);
+    }
+
+    /* Action buttons frosted look */
+    .action-btn-glass {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.85) 100%);
+      backdrop-filter: blur(12px);
+      box-shadow: 
+        0 8px 20px -4px rgba(15, 23, 42, 0.12),
+        0 2px 6px -1px rgba(14, 165, 233, 0.08),
+        inset 0 1.5px 2px rgba(255, 255, 255, 1),
+        inset 0 -1.5px 3px rgba(203, 213, 225, 0.4);
+    }
+
+    /* Holographic keyboard styling */
+    .holo-deck {
+      background: linear-gradient(180deg, rgba(6, 182, 212, 0.18) 0%, rgba(14, 165, 233, 0.08) 100%);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 10px 25px -3px rgba(6, 182, 212, 0.35), inset 0 0 12px rgba(56, 189, 248, 0.45);
+      perspective: 600px;
+    }
+
+    /* Thought Cloud Styling */
+    .thought-bubble-glass {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      box-shadow: 
+        0 14px 35px -5px rgba(6, 182, 212, 0.22),
+        0 4px 12px rgba(15, 23, 42, 0.08),
+        inset 0 2px 4px rgba(255, 255, 255, 1),
+        0 0 18px rgba(56, 189, 248, 0.25);
+    }
+
+    .waveform-bar {
+      animation: soundWave 0.9s ease-in-out infinite alternate;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-slate-50 via-slate-100 to-[#e9eef5] text-slate-800 min-h-screen flex flex-col items-center justify-between p-4 overflow-hidden relative select-none">
+<!-- Background Ambient Glow & Subtle Minimal Grid -->
+<div class="absolute inset-0 cyber-grid pointer-events-none"></div>
+<div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] h-[460px] bg-sky-200/50 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="absolute top-1/4 left-1/3 w-[280px] h-[280px] bg-cyan-100/60 rounded-full blur-[90px] pointer-events-none"></div>
+<!-- Minimal Header -->
+<header class="w-full max-w-sm flex items-center justify-between z-10 pt-3 px-2">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/75 border border-slate-200/80 backdrop-blur-md shadow-sm">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-500 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+</span>
+<span class="text-xs font-semibold tracking-wider text-slate-700 uppercase">AI Companion</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/75 border border-slate-200/80 backdrop-blur-md shadow-sm transition-all duration-300" id="status-pill">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" id="status-indicator"></span>
+<span class="text-[11px] font-semibold text-slate-700" id="status-label">ONLINE</span>
+</div>
+</header>
+<!-- Interactive Robot Area -->
+<main class="w-full flex-1 flex flex-col items-center justify-center relative z-10 cursor-pointer py-4" id="robot-interactive-zone" title="Tap or click me!">
+<!-- Outer Ambient Glow behind Robot -->
+<div class="absolute w-72 h-72 rounded-full bg-cyan-300/35 blur-3xl animate-aura pointer-events-none"></div>
+<!-- Combined Robot Container -->
+<div class="relative flex items-center justify-center">
+<!-- Futuristic Thought Cloud (Active during Searching Mode) -->
+<div class="absolute -top-24 -right-16 md:-right-24 z-40 pointer-events-none transition-all duration-400 ease-out opacity-0 scale-75 translate-y-3" id="thought-cloud-wrapper">
+<div class="relative animate-thought-bubble">
+<!-- Main Thought Cloud Body -->
+<div class="thought-bubble-glass rounded-[28px] border border-cyan-300/60 px-4 py-2.5 flex flex-col items-center gap-1.5 shadow-[0_8px_30px_rgba(56,189,248,0.25)] min-w-[150px]">
+<!-- Header Badge -->
+<div class="flex items-center justify-between w-full gap-2 border-b border-cyan-100 pb-1 text-[9px] font-semibold text-cyan-600 tracking-wider">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+          PROCESSING
+        </span>
+<span class="text-[8px] font-mono text-cyan-500">100% CPU</span>
+</div>
+<!-- Processing Waveform & Line Animation -->
+<div class="flex items-center justify-center gap-1 h-6 w-full px-1">
+<span class="waveform-bar w-1 rounded-full bg-cyan-400" style="animation-delay: 0.0s;"></span>
+<span class="waveform-bar w-1 rounded-full bg-cyan-500" style="animation-delay: 0.15s;"></span>
+<span class="waveform-bar w-1 rounded-full bg-sky-400" style="animation-delay: 0.3s;"></span>
+<span class="waveform-bar w-1 rounded-full bg-cyan-400" style="animation-delay: 0.45s;"></span>
+<span class="waveform-bar w-1.5 rounded-full bg-cyan-500" style="animation-delay: 0.6s;"></span>
+<span class="waveform-bar w-1 rounded-full bg-sky-400" style="animation-delay: 0.2s;"></span>
+<span class="waveform-bar w-1 rounded-full bg-cyan-400" style="animation-delay: 0.4s;"></span>
+<span class="waveform-bar w-1 rounded-full bg-cyan-500" style="animation-delay: 0.1s;"></span>
+<span class="waveform-bar w-1 rounded-full bg-sky-400" style="animation-delay: 0.5s;"></span>
+</div>
+<!-- Scanning SVG Frequency / Data Line -->
+<div class="w-full flex items-center justify-center overflow-hidden h-3">
+<svg class="w-full h-full stroke-cyan-500 fill-none" viewbox="0 0 100 12">
+<path d="M0,6 L20,6 L27,2 L34,10 L42,1 L50,11 L58,4 L64,8 L72,6 L100,6" stroke-dasharray="100" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" style="animation: dataPulseLine 1.4s linear infinite;"></path>
+</svg>
+</div>
+</div>
+<!-- Thought Bubble Connector Nodes -->
+<div class="absolute -bottom-2.5 left-4 w-4 h-4 rounded-full thought-bubble-glass border border-cyan-300/70 shadow-sm"></div>
+<div class="absolute -bottom-5 left-1 w-2.5 h-2.5 rounded-full thought-bubble-glass border border-cyan-300/70 shadow-sm"></div>
+</div>
+</div>
+<!-- Main Robot Head -->
+<div class="animate-float-head transition-transform duration-300 ease-out z-10 relative" id="robot-head">
+<!-- Clean Sleek Rounded Outer Ceramic Casing -->
+<div class="relative w-64 h-60 rounded-[52px] p-3.5 ceramic-chassis border border-white flex items-center justify-center">
+<!-- Outer Surface Gloss Curve -->
+<div class="absolute top-2 left-8 right-8 h-4 bg-gradient-to-b from-white to-transparent rounded-full pointer-events-none blur-[0.5px]"></div>
+<!-- Top Mini Antenna Bead -->
+<div class="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-2.5 rounded-full bg-white border border-slate-200 shadow-[0_2px_6px_rgba(15,23,42,0.1),0_0_8px_rgba(56,189,248,0.6)] flex items-center justify-center">
+<div class="w-2.5 h-1 bg-cyan-400 rounded-full animate-pulse" id="antenna-light"></div>
+</div>
+<!-- Futuristic Curved Dark Visor Screen -->
+<div class="w-full h-full rounded-[42px] visor-glass border border-slate-800/80 flex flex-col items-center justify-between p-6 relative overflow-hidden" id="visor-screen">
+<!-- Visor Diagonal Sheen -->
+<div class="absolute -top-20 -left-20 w-36 h-80 bg-gradient-to-r from-transparent via-white/12 to-transparent rotate-45 pointer-events-none"></div>
+<!-- Eyes Cluster -->
+<div class="flex items-center justify-center gap-9 w-full transition-all duration-300 ease-out my-auto pt-2" id="eyes-container">
+<!-- Left Eye -->
+<div class="w-12 h-[60px] rounded-full bg-cyan-400 eye-glow flex items-center justify-center relative transition-all duration-200 overflow-hidden" id="left-eye">
+<div class="pupil w-5 h-7 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_#ffffff] transition-transform duration-300">
+<div class="w-2.5 h-3.5 rounded-full bg-sky-200"></div>
+</div>
+<div class="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-white/95"></div>
+</div>
+<!-- Right Eye -->
+<div class="w-12 h-[60px] rounded-full bg-cyan-400 eye-glow flex items-center justify-center relative transition-all duration-200 overflow-hidden" id="right-eye">
+<div class="pupil w-5 h-7 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_#ffffff] transition-transform duration-300">
+<div class="w-2.5 h-3.5 rounded-full bg-sky-200"></div>
+</div>
+<div class="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-white/95"></div>
+</div>
+</div>
+<!-- Cute Blushing Cheeks -->
+<div class="w-full flex justify-between px-3 -mt-2 opacity-30 transition-opacity duration-300 pointer-events-none" id="blush-layer">
+<div class="w-6 h-2 rounded-full bg-pink-400 cheek-glow blur-[2px]"></div>
+<div class="w-6 h-2 rounded-full bg-pink-400 cheek-glow blur-[2px]"></div>
+</div>
+<!-- Expressive Animated Mouth -->
+<div class="h-5 flex items-center justify-center relative w-full mb-2">
+<div class="w-5 h-2 rounded-full bg-cyan-300/90 shadow-[0_0_10px_#38bdf8] transition-all duration-200 ease-out" id="robot-mouth"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Mini Holographic Floating Keyboard Deck (Appears in Searching Mode) -->
+<div class="absolute -bottom-7 inset-x-0 flex flex-col items-center justify-center z-25 pointer-events-none transition-all duration-400 ease-out opacity-0 scale-75 translate-y-3" id="holo-keyboard-container">
+<!-- Floating Holographic Projection Board -->
+<div class="relative w-52 py-2 px-3 rounded-2xl border border-cyan-400/70 holo-deck animate-holo-keyboard shadow-[0_0_20px_rgba(6,182,212,0.45)]">
+<!-- Top Holographic Glow Beam Grid -->
+<div class="flex justify-between items-center px-1 mb-1.5 border-b border-cyan-400/40 pb-1 text-[8px] font-mono tracking-widest text-cyan-200">
+<div class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping"></span>
+<span>HOLO_KEYBOARD // 960 WPM</span>
+</div>
+<div class="text-cyan-300 font-bold">PROMPT_EXEC</div>
+</div>
+<!-- Holographic Keys Matrix (3 Rows of glowing interactive keys) -->
+<div class="flex flex-col gap-1 w-full">
+<!-- Row 1 -->
+<div class="grid grid-cols-7 gap-1">
+<div class="holo-key h-3 rounded-md bg-cyan-400/25 border border-cyan-300/60 shadow-[0_0_5px_rgba(56,189,248,0.5)] transition-all"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/25 border border-cyan-300/60 shadow-[0_0_5px_rgba(56,189,248,0.5)] transition-all"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/40 border border-cyan-200 shadow-[0_0_8px_#38bdf8] animate-pulse"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/25 border border-cyan-300/60 shadow-[0_0_5px_rgba(56,189,248,0.5)] transition-all"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/25 border border-cyan-300/60 shadow-[0_0_5px_rgba(56,189,248,0.5)] transition-all"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/40 border border-cyan-200 shadow-[0_0_8px_#38bdf8] animate-pulse"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/25 border border-cyan-300/60 shadow-[0_0_5px_rgba(56,189,248,0.5)] transition-all"></div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-6 gap-1 px-1">
+<div class="holo-key h-3 rounded-md bg-cyan-400/25 border border-cyan-300/60 shadow-[0_0_5px_rgba(56,189,248,0.5)] transition-all"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/40 border border-cyan-200 shadow-[0_0_8px_#38bdf8]"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/25 border border-cyan-300/60 shadow-[0_0_5px_rgba(56,189,248,0.5)] transition-all"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/25 border border-cyan-300/60 shadow-[0_0_5px_rgba(56,189,248,0.5)] transition-all"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/45 border border-cyan-200 shadow-[0_0_8px_#38bdf8]"></div>
+<div class="holo-key h-3 rounded-md bg-cyan-400/25 border border-cyan-300/60 shadow-[0_0_5px_rgba(56,189,248,0.5)] transition-all"></div>
+</div>
+<!-- Row 3 (Spacebar row) -->
+<div class="flex gap-1 justify-center items-center">
+<div class="holo-key w-8 h-2.5 rounded-md bg-cyan-400/30 border border-cyan-300/70"></div>
+<div class="holo-key flex-1 h-2.5 rounded-md bg-cyan-300/50 border border-cyan-200 shadow-[0_0_10px_#38bdf8]"></div>
+<div class="holo-key w-8 h-2.5 rounded-md bg-cyan-400/30 border border-cyan-300/70"></div>
+</div>
+</div>
+<!-- Floating Typing Particles & Neon Ripples under Hands -->
+<div class="absolute -top-2 left-10 w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_8px_#38bdf8] animate-spark-left pointer-events-none"></div>
+<div class="absolute -top-1.5 right-10 w-2.5 h-2.5 rounded-full bg-cyan-200 shadow-[0_0_10px_#38bdf8] animate-spark-right pointer-events-none"></div>
+<div class="absolute -bottom-2.5 inset-x-8 h-1 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent blur-[1.5px]"></div>
+</div>
+</div>
+<!-- Cute Floating Hands (Crisp White Ceramic Paws) Repositioned for resting and high-speed typing -->
+<div class="absolute -bottom-3 inset-x-0 flex justify-center items-center gap-14 z-30 pointer-events-none">
+<!-- Left Hand Paw (Overlapping Front Chin / Keyboard) -->
+<div class="animate-paw-left transition-all duration-300 relative" id="left-hand">
+<div class="w-11 h-9 rounded-2xl paw-ceramic border-2 border-white flex flex-col items-center justify-center relative overflow-hidden transform -rotate-6">
+<!-- Gloss highlight on paw top -->
+<div class="absolute top-1 inset-x-2 h-2 bg-white rounded-full blur-[0.5px]"></div>
+<!-- Glowing palm pad/fingertip node -->
+<div class="w-3.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] mt-1.5" id="left-paw-node"></div>
+<div class="flex gap-1 mt-1">
+<div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+</div>
+</div>
+</div>
+<!-- Right Hand Paw (Overlapping Front Chin / Keyboard) -->
+<div class="animate-paw-right transition-all duration-300 relative" id="right-hand">
+<div class="w-11 h-9 rounded-2xl paw-ceramic border-2 border-white flex flex-col items-center justify-center relative overflow-hidden transform rotate-6">
+<!-- Gloss highlight on paw top -->
+<div class="absolute top-1 inset-x-2 h-2 bg-white rounded-full blur-[0.5px]"></div>
+<!-- Glowing palm pad/fingertip node -->
+<div class="w-3.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] mt-1.5" id="right-paw-node"></div>
+<div class="flex gap-1 mt-1">
+<div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Round Action Buttons (Mic & Stop) Placed Right Below the Floating Hands -->
+<div class="flex items-center justify-center gap-5 mt-7 z-30" onclick="event.stopPropagation()">
+<!-- Mic Button (Voice Input / Listening Mode) -->
+<div class="relative flex flex-col items-center group">
+<!-- Active Pulse Ring (Hidden until active) -->
+<div class="absolute -inset-1.5 rounded-full bg-cyan-400/40 pointer-events-none opacity-0" id="mic-pulse-ring"></div>
+<button aria-label="Microphone / Voice input" class="action-btn-glass relative w-12 h-12 rounded-full border border-white/90 flex items-center justify-center text-slate-600 transition-all duration-300 hover:scale-110 active:scale-95 hover:text-cyan-600 hover:border-cyan-300/80 shadow-[0_6px_18px_rgba(15,23,42,0.08)] group-hover:shadow-[0_8px_24px_rgba(6,182,212,0.22)]" id="btn-mic" onclick="toggleListeningMode(event)">
+<span class="material-symbols-outlined text-[23px] transition-transform duration-200 group-hover:scale-105" id="mic-icon">mic</span>
+<!-- Tiny Status Dot for Mic -->
+<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400 opacity-0 transition-opacity duration-300" id="mic-status-dot"></span>
+</button>
+<span class="text-[10px] font-semibold text-slate-500 tracking-wide mt-1.5 transition-colors duration-200 group-hover:text-cyan-600" id="mic-label">Mic</span>
+</div>
+<!-- Stop Button (Cancel / Reset to Idle) -->
+<div class="relative flex flex-col items-center group">
+<button aria-label="Stop actions / Reset" class="action-btn-glass relative w-12 h-12 rounded-full border border-white/90 flex items-center justify-center text-slate-600 transition-all duration-300 hover:scale-110 active:scale-95 hover:text-rose-500 hover:border-rose-200/90 shadow-[0_6px_18px_rgba(15,23,42,0.08)] group-hover:shadow-[0_8px_24px_rgba(244,63,94,0.18)]" id="btn-stop" onclick="stopAllActions(event)">
+<span class="material-symbols-outlined text-[22px] transition-transform duration-200 group-hover:scale-105 text-slate-700 group-hover:text-rose-500">stop</span>
+</button>
+<span class="text-[10px] font-semibold text-slate-500 tracking-wide mt-1.5 transition-colors duration-200 group-hover:text-rose-500">Stop</span>
+</div>
+</div>
+<!-- Soft Floor Projection Shadow -->
+<div class="w-48 h-4 rounded-full bg-slate-400/35 blur-md animate-shadow mt-4 pointer-events-none"></div>
+<!-- Friendly Tap Prompt Hint -->
+<div class="mt-3 flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/80 border border-slate-200/90 text-slate-600 text-xs font-medium backdrop-blur shadow-sm transition-all duration-300 hover:border-cyan-300" id="tap-hint">
+<span class="text-cyan-500" id="hint-icon">✨</span>
+<span id="hint-text">Tap anywhere to play with me!</span>
+</div>
+</main>
+<!-- Qt WebChannel library -->
+<script
+    src="./qwebchannel.js"
+    onload="console.log('QWebChannel library loaded successfully.')"
+    onerror="console.error('Failed to load local QWebChannel library.')">
+</script>
+
+<!-- Connect JavaScript to Python -->
+<script>
+    let assistantBridge = null;
+    let bridgeReady = false;
+
+    function connectPythonBridge() {
+        if (typeof QWebChannel === "undefined") {
+            console.error("QWebChannel is not available.");
+            return;
+        }
+
+        if (typeof qt === "undefined" || !qt.webChannelTransport) {
+            console.error("Qt WebChannel transport is unavailable.");
+            return;
+        }
+
+        new QWebChannel(qt.webChannelTransport, function(channel) {
+            assistantBridge = channel.objects.assistantBridge;
+            bridgeReady = true;
+
+            console.log("Python bridge connected successfully.");
+
+            // Python status changes (e.g. "Searching...", "Opening Chrome", "Idle")
+            assistantBridge.statusChanged.connect(function(status) {
+                console.log("Python status:", status);
+                handleBridgeStatus(status);
+            });
+
+            // Assistant finished and replied -> task is done
+            assistantBridge.assistantResponse.connect(function(response) {
+                console.log("Assistant response:", response);
+                handleBridgeResponse(response);
+            });
+
+            // A voice/text command was understood -> task is starting
+            assistantBridge.commandRecognized.connect(function(command) {
+                console.log("Recognized command:", command);
+                handleBridgeCommand(command);
+            });
+        });
+    }
+
+    connectPythonBridge();
+</script>
+
+<!-- Animation & Interaction Engine -->
+<script>
+    const leftEye = document.getElementById('left-eye');
+    const rightEye = document.getElementById('right-eye');
+    const eyesContainer = document.getElementById('eyes-container');
+    const mouth = document.getElementById('robot-mouth');
+    const leftHand = document.getElementById('left-hand');
+    const rightHand = document.getElementById('right-hand');
+    const robotHead = document.getElementById('robot-head');
+    const blush = document.getElementById('blush-layer');
+    const hintText = document.getElementById('hint-text');
+    const hintIcon = document.getElementById('hint-icon');
+    const interactiveZone = document.getElementById('robot-interactive-zone');
+    const holoKeyboard = document.getElementById('holo-keyboard-container');
+    const thoughtCloud = document.getElementById('thought-cloud-wrapper');
+    const statusPill = document.getElementById('status-pill');
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusLabel = document.getElementById('status-label');
+    const antennaLight = document.getElementById('antenna-light');
+
+    // New action button elements
+    const btnMic = document.getElementById('btn-mic');
+    const micPulseRing = document.getElementById('mic-pulse-ring');
+    const micStatusDot = document.getElementById('mic-status-dot');
+    const micLabel = document.getElementById('mic-label');
+    const micIcon = document.getElementById('mic-icon');
+    const btnStop = document.getElementById('btn-stop');
+
+    let isInteracting = false;
+    let currentEmotion = 'neutral';
+    let isListening = false;
+    let listeningWaveInterval = null;
+    let searchScanInterval = null;
+    let keyGlitchInterval = null;
+
+    // Blinking mechanism
+    function triggerBlink() {
+      if (isInteracting && (currentEmotion === 'happy' || currentEmotion === 'love' || currentEmotion === 'searching')) return;
+      
+      leftEye.style.transform = 'scaleY(0.08)';
+      rightEye.style.transform = 'scaleY(0.08)';
+      
+      setTimeout(() => {
+        if (currentEmotion !== 'searching') {
+          leftEye.style.transform = 'scaleY(1)';
+          rightEye.style.transform = 'scaleY(1)';
+        }
+      }, 160);
+    }
+
+    // Schedule natural random blinking
+    function scheduleBlink() {
+      const nextBlink = Math.random() * 3200 + 2200;
+      setTimeout(() => {
+        triggerBlink();
+        scheduleBlink();
+      }, nextBlink);
+    }
+    scheduleBlink();
+
+    // Looking left, right, and center naturally
+    function scheduleLooking() {
+      const nextLook = Math.random() * 4000 + 2500;
+      setTimeout(() => {
+        if (!isInteracting && currentEmotion !== 'searching' && !isListening) {
+          const rand = Math.random();
+          const pupils = document.querySelectorAll('.pupil');
+          
+          if (rand < 0.35) {
+            // Look left
+            eyesContainer.style.transform = 'translateX(-7px)';
+            pupils.forEach(p => p.style.transform = 'translateX(-4px)');
+            mouth.style.transform = 'translateX(-3px)';
+          } else if (rand < 0.70) {
+            // Look right
+            eyesContainer.style.transform = 'translateX(7px)';
+            pupils.forEach(p => p.style.transform = 'translateX(4px)');
+            mouth.style.transform = 'translateX(3px)';
+          } else {
+            // Center
+            eyesContainer.style.transform = 'translateX(0px)';
+            pupils.forEach(p => p.style.transform = 'translateX(0px)');
+            mouth.style.transform = 'translateX(0px)';
+          }
+        }
+        scheduleLooking();
+      }, nextLook);
+    }
+    scheduleLooking();
+
+    // Reset Eyes to Default glowing circles
+    function resetEyes() {
+      eyesContainer.style.transform = 'translateX(0px)';
+      
+      leftEye.className = "w-12 h-[60px] rounded-full bg-cyan-400 eye-glow flex items-center justify-center relative transition-all duration-200 overflow-hidden";
+      rightEye.className = "w-12 h-[60px] rounded-full bg-cyan-400 eye-glow flex items-center justify-center relative transition-all duration-200 overflow-hidden";
+      leftEye.style.width = "";
+      leftEye.style.height = "";
+      rightEye.style.width = "";
+      rightEye.style.height = "";
+      leftEye.style.borderRadius = "";
+      rightEye.style.borderRadius = "";
+      leftEye.style.transform = '';
+      rightEye.style.transform = '';
+      leftEye.style.boxShadow = '';
+      rightEye.style.boxShadow = '';
+      leftEye.style.background = '';
+      rightEye.style.background = '';
+
+      leftEye.innerHTML = `
+        <div class="pupil w-5 h-7 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_#ffffff] transition-transform duration-300">
+          <div class="w-2.5 h-3.5 rounded-full bg-sky-200"></div>
+        </div>
+        <div class="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-white/95"></div>`;
+      rightEye.innerHTML = `
+        <div class="pupil w-5 h-7 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_#ffffff] transition-transform duration-300">
+          <div class="w-2.5 h-3.5 rounded-full bg-sky-200"></div>
+        </div>
+        <div class="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-white/95"></div>`;
+    }
+
+    function clearSearchingEffects() {
+      if (searchScanInterval) {
+        clearInterval(searchScanInterval);
+        searchScanInterval = null;
+      }
+      if (keyGlitchInterval) {
+        clearInterval(keyGlitchInterval);
+        keyGlitchInterval = null;
+      }
+
+      // Hide holographic keyboard smoothly
+      holoKeyboard.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+      holoKeyboard.classList.add('opacity-0', 'scale-75', 'translate-y-3');
+
+      // Hide thought cloud smoothly
+      if (thoughtCloud) {
+        thoughtCloud.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+        thoughtCloud.classList.add('opacity-0', 'scale-75', 'translate-y-3');
+      }
+
+      // Stop typing paw animation and restore resting float
+      leftHand.classList.remove('animate-typing-paw-l');
+      rightHand.classList.remove('animate-typing-paw-r');
+      leftHand.classList.add('animate-paw-left');
+      rightHand.classList.add('animate-paw-right');
+      leftHand.style.transform = '';
+      rightHand.style.transform = '';
+
+      // Reset antenna light and status pill
+      antennaLight.classList.remove('!bg-amber-400');
+      statusIndicator.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+      statusLabel.textContent = "ONLINE";
+      statusPill.classList.remove('!border-cyan-400/80', '!bg-cyan-50/90');
+    }
+
+    function deactivateListeningMode() {
+      if (!isListening) return;
+      isListening = false;
+      if (listeningWaveInterval) {
+        clearInterval(listeningWaveInterval);
+        listeningWaveInterval = null;
+      }
+      micPulseRing.classList.remove('mic-active-ring', '!opacity-100');
+      micPulseRing.classList.add('opacity-0');
+      micStatusDot.classList.remove('!opacity-100');
+      micStatusDot.classList.add('opacity-0');
+      btnMic.classList.remove('!border-cyan-400', '!text-cyan-600', '!bg-cyan-50/80', 'shadow-[0_0_18px_rgba(6,182,212,0.4)]');
+      micLabel.textContent = "Mic";
+      micLabel.classList.remove('!text-cyan-600', 'font-bold');
+      antennaLight.classList.remove('!bg-cyan-300');
+    }
+
+    // Toggle Voice Listening Mode via Mic Button
+    function toggleListeningMode(event) {
+    if (event) event.stopPropagation();
+
+    // If already listening, stop the current listening request.
+    if (isListening) {
+        if (bridgeReady && assistantBridge) {
+            assistantBridge.stopListening();
+        }
+
+        deactivateListeningMode();
+        returnToCalm();
+        return;
+    }
+
+    // Do not activate the visual animation if Python is disconnected.
+    if (!bridgeReady || !assistantBridge) {
+        console.error("Python bridge is not connected.");
+
+        hintIcon.textContent = "⚠️";
+        hintText.textContent = "Python connection unavailable.";
+
+        return;
+    }
+
+    // Start Python voice recognition exactly once.
+    assistantBridge.startListening();
+
+    // Stop other animations first.
+    clearTimeout(window.emotionTimeout);
+    clearSearchingEffects();
+
+    isListening = true;
+    isInteracting = true;
+    currentEmotion = 'listening';
+
+    // Update Mic button style.
+    micPulseRing.classList.remove('opacity-0');
+    micPulseRing.classList.add('mic-active-ring', '!opacity-100');
+
+    micStatusDot.classList.remove('opacity-0');
+    micStatusDot.classList.add('!opacity-100');
+
+    btnMic.classList.add(
+        '!border-cyan-400',
+        '!text-cyan-600',
+        '!bg-cyan-50/80',
+        'shadow-[0_0_18px_rgba(6,182,212,0.4)]'
+    );
+
+    micLabel.textContent = "Listening...";
+    micLabel.classList.add('!text-cyan-600', 'font-bold');
+
+    // Update status pill.
+    statusIndicator.className =
+        "w-2 h-2 rounded-full bg-cyan-400 animate-ping";
+
+    statusLabel.textContent = "LISTENING";
+    statusPill.classList.add(
+        '!border-cyan-400/80',
+        '!bg-cyan-50/90'
+    );
+
+    antennaLight.classList.add('!bg-cyan-300');
+
+
+    // Listening eyes.
+    resetEyes();
+
+    leftEye.style.transform = 'scale(1.08)';
+    rightEye.style.transform = 'scale(1.08)';
+
+    // Animated mouth.
+    mouth.style.width = "14px";
+    mouth.style.height = "14px";
+    mouth.style.borderRadius = "9999px";
+    mouth.style.background = "#38bdf8";
+    mouth.style.boxShadow = "0 0 14px #38bdf8";
+
+    // Hands.
+    leftHand.style.transform =
+        "translateY(-8px) translateX(6px) rotate(-12deg)";
+
+    rightHand.style.transform =
+        "translateY(-8px) translateX(-6px) rotate(12deg)";
+
+    blush.style.opacity = "0.5";
+
+    hintIcon.textContent = "🎙️";
+    hintText.textContent = "I'm listening closely... speak now!";
+
+    // Listening animation.
+    let pulseStep = 0;
+
+    listeningWaveInterval = setInterval(() => {
+        if (!isListening) return;
+
+        pulseStep = (pulseStep + 1) % 4;
+
+        const heights = ["10px", "16px", "8px", "14px"];
+        const widths = ["12px", "16px", "10px", "14px"];
+
+        mouth.style.height = heights[pulseStep];
+        mouth.style.width = widths[pulseStep];
+
+    }, 240);
+}
+
+    // Stop button handler: cancels listening, search typing, or active emotion and returns to neutral
+    function stopAllActions(event) {
+    if (event) event.stopPropagation();
+
+    // Ask Python to stop listening.
+    if (bridgeReady && assistantBridge) {
+        assistantBridge.stopListening();
+    }
+
+    // Stop button animation.
+    btnStop.classList.add(
+        'scale-90',
+        'border-rose-400',
+        'bg-rose-50/80'
+    );
+
+    setTimeout(() => {
+        btnStop.classList.remove(
+            'scale-90',
+            'border-rose-400',
+            'bg-rose-50/80'
+        );
+    }, 180);
+
+    // Reset animations.
+    deactivateListeningMode();
+    clearSearchingEffects();
+
+    clearTimeout(window.emotionTimeout);
+
+    returnToCalm();
+
+    hintIcon.textContent = "⏹️";
+    hintText.textContent = "Actions stopped. Assistant ready!";
+
+    setTimeout(() => {
+        if (currentEmotion === 'neutral' && !isListening) {
+            hintIcon.textContent = "✨";
+            hintText.textContent = "Tap anywhere to play with me!";
+        }
+    }, 2000);
+}
+
+    // Emotion controller
+    function triggerEmotion(type) {
+      clearTimeout(window.emotionTimeout);
+      clearSearchingEffects();
+      deactivateListeningMode();
+
+      isInteracting = true;
+      currentEmotion = type;
+
+
+      if (type === 'happy') {
+        // Happy inverted arc eyes (^ ^)
+        leftEye.className = "w-12 happy-eye transition-all duration-200";
+        rightEye.className = "w-12 happy-eye transition-all duration-200";
+        leftEye.innerHTML = "";
+        rightEye.innerHTML = "";
+
+        // Big warm smile
+        mouth.style.width = "26px";
+        mouth.style.height = "13px";
+        mouth.style.borderRadius = "2px 2px 18px 18px";
+        mouth.style.background = "#67e8f9";
+
+        // Blushing pink cheeks
+        blush.style.opacity = "0.9";
+
+        // Cute paw clapping / excited bounce in front of chin
+        leftHand.style.transform = "translateY(-14px) translateX(8px) rotate(-14deg) scale(1.08)";
+        rightHand.style.transform = "translateY(-14px) translateX(-8px) rotate(14deg) scale(1.08)";
+        robotHead.style.transform = "translateY(-8px) scale(1.03)";
+
+        hintIcon.textContent = "✨";
+        hintText.textContent = "Yay! You made me happy!";
+
+      } else if (type === 'wink') {
+        resetEyes();
+        leftEye.style.transform = 'scaleY(0.12)';
+        rightEye.style.transform = 'scaleY(1.06)';
+        
+        mouth.style.width = "18px";
+        mouth.style.height = "9px";
+        mouth.style.borderRadius = "2px 2px 12px 12px";
+        mouth.style.transform = "rotate(-4deg)";
+        
+        blush.style.opacity = "0.7";
+        // One paw waves up in front of face
+        leftHand.style.transform = "translateY(-4px) rotate(-4deg)";
+        rightHand.style.transform = "translateY(-18px) rotate(18deg) scale(1.1)";
+        hintIcon.textContent = "😉";
+        hintText.textContent = "*Wink!* All systems optimal!";
+
+      } else if (type === 'curious') {
+        resetEyes();
+        leftEye.style.transform = 'scale(1.15)';
+        rightEye.style.transform = 'scale(0.85)';
+        
+        // Small "O" mouth
+        mouth.style.width = "12px";
+        mouth.style.height = "12px";
+        mouth.style.borderRadius = "9999px";
+        mouth.style.transform = "translateY(2px)";
+        
+        blush.style.opacity = "0.2";
+        robotHead.style.transform = "rotate(4deg) scale(1.02)";
+        // Paws tilt curiously peeking up
+        leftHand.style.transform = "translateY(-10px) rotate(6deg)";
+        rightHand.style.transform = "translateY(4px) rotate(2deg)";
+        hintIcon.textContent = "😮";
+        hintText.textContent = "Ooh, what's that over there?";
+
+      } else if (type === 'searching') {
+        // 1. DEADPAN / SERIOUS 😑 EXPRESSION:
+        // Eyes become clean horizontal glowing bars / slits like ─ ─
+        leftEye.className = "deadpan-eye-bar";
+        rightEye.className = "deadpan-eye-bar";
+        leftEye.innerHTML = "";
+        rightEye.innerHTML = "";
+
+        // Mouth becomes a matching straight flat line
+        mouth.style.width = "28px";
+        mouth.style.height = "4.5px";
+        mouth.style.borderRadius = "9999px";
+        mouth.style.background = "#38bdf8";
+        mouth.style.boxShadow = "0 0 10px #38bdf8";
+        mouth.style.transform = "translateY(2px)";
+
+        // Completely zero blush cheeks (pure deadpan concentration)
+        blush.style.opacity = "0";
+
+        // Steady focused head posture
+        robotHead.style.transform = "translateY(2px) scale(1.01)";
+
+        // 2. SHOW THOUGHT CLOUD WITH DATA WAVEFORM & LINE ANIMATION:
+        if (thoughtCloud) {
+          thoughtCloud.classList.remove('opacity-0', 'scale-75', 'translate-y-3');
+          thoughtCloud.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+        }
+
+        // 3. MINI HOLOGRAPHIC KEYBOARD APPEARS:
+        holoKeyboard.classList.remove('opacity-0', 'scale-75', 'translate-y-3');
+        holoKeyboard.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+
+        // Dynamic typing pulse ripple effect on random keys
+        const holoKeys = holoKeyboard.querySelectorAll('.holo-key');
+        keyGlitchInterval = setInterval(() => {
+          const randKey = holoKeys[Math.floor(Math.random() * holoKeys.length)];
+          randKey.style.backgroundColor = 'rgba(103, 232, 249, 0.9)';
+          randKey.style.boxShadow = '0 0 12px #38bdf8';
+          setTimeout(() => {
+            randKey.style.backgroundColor = '';
+            randKey.style.boxShadow = '';
+          }, 150);
+        }, 120);
+
+        // 4. FAST HAND TYPING ANIMATION (ALTERNATING RAPID TAPS):
+        leftHand.classList.remove('animate-paw-left');
+        rightHand.classList.remove('animate-paw-right');
+        leftHand.classList.add('animate-typing-paw-l');
+        rightHand.classList.add('animate-typing-paw-r');
+
+        // Status badge updates to searching badge with pulse
+        statusIndicator.className = "w-2 h-2 rounded-full bg-cyan-500 animate-ping";
+        statusLabel.textContent = currentTaskLabel || "SEARCHING...";
+        statusPill.classList.add('!border-cyan-400/80', '!bg-cyan-50/90');
+        antennaLight.classList.add('!bg-amber-400');
+
+        hintIcon.textContent = "😑";
+        hintText.textContent = currentTaskText || "Deep thought mode active: crunching data matrices...";
+
+        // Looping interactive scanning phrases
+        const searchPhrases = [
+          "Deep thought mode active: crunching data matrices...",
+          "Decrypting neural queries... 99.2%",
+          "Streaming answers at 960 words per minute!",
+          "Processing thoughts in holographic cloud buffer... ⚡"
+        ];
+        let phraseIdx = 0;
+        searchScanInterval = setInterval(() => {
+          if (currentTaskText) {
+            hintText.textContent = currentTaskText;
+            return;
+          }
+          phraseIdx = (phraseIdx + 1) % searchPhrases.length;
+          hintText.textContent = searchPhrases[phraseIdx];
+        }, 2200);
+
+      } else if (type === 'love') {
+        // Heart-like glowing pink-tinted eyes
+        leftEye.className = "w-12 happy-eye transition-all duration-200 !border-pink-400 !shadow-[0_-4px_16px_rgba(244,114,182,0.9)]";
+        rightEye.className = "w-12 happy-eye transition-all duration-200 !border-pink-400 !shadow-[0_-4px_16px_rgba(244,114,182,0.9)]";
+        leftEye.innerHTML = "";
+        rightEye.innerHTML = "";
+
+        mouth.style.width = "22px";
+        mouth.style.height = "11px";
+        mouth.style.borderRadius = "2px 2px 14px 14px";
+        mouth.style.background = "#f472b6";
+
+        blush.style.opacity = "1";
+        // Paws hold close together in front like cute paws hugging chin
+        leftHand.style.transform = "translateY(-16px) translateX(12px) rotate(8deg) scale(1.05)";
+        rightHand.style.transform = "translateY(-16px) translateX(-12px) rotate(-8deg) scale(1.05)";
+        hintIcon.textContent = "❤️";
+        hintText.textContent = "AI loves company! ❤️";
+      }
+
+      // Auto revert to calm neutral after 4 seconds for wink/curious/love/happy (searching stays active until stopped or toggled)
+      if (type !== 'searching') {
+        window.emotionTimeout = setTimeout(() => {
+          returnToCalm();
+        }, 4000);
+      }
+    }
+
+    function returnToCalm() {
+      clearSearchingEffects();
+      deactivateListeningMode();
+      resetEyes();
+
+      mouth.style.width = "20px";
+      mouth.style.height = "8px";
+      mouth.style.borderRadius = "9999px";
+      mouth.style.background = "#67e8f9";
+      mouth.style.transform = "none";
+      mouth.style.boxShadow = "0 0 10px #38bdf8";
+      blush.style.opacity = "0.3";
+      
+      leftHand.style.transform = "";
+      rightHand.style.transform = "";
+      robotHead.style.transform = "";
+      
+      isInteracting = false;
+      currentEmotion = 'neutral';
+      hintIcon.textContent = "✨";
+      hintText.textContent = "Tap anywhere to play with me!";
+
+      currentTaskText = '';
+      currentTaskLabel = '';
+    }
+
+    // Direct click/tap on robot triggers excited happy wave & cheerful paw gesture
+    interactiveZone.addEventListener('click', (e) => {
+      // Ignore if clicking action buttons container
+      if (e.target.closest('#btn-mic') || e.target.closest('#btn-stop')) return;
+
+      if (currentEmotion === 'searching') {
+        // Quick burst typing feedback on keyboard tap
+        const spark = document.createElement('div');
+        spark.className = 'absolute pointer-events-none text-cyan-600 font-bold text-xs animate-bounce z-40 bg-white/95 px-3 py-1 rounded-full shadow-md border border-cyan-300 flex items-center gap-1';
+        spark.innerHTML = '<span>⚡ Code Executed!</span>';
+        const rect = interactiveZone.getBoundingClientRect();
+        spark.style.left = `${e.clientX - rect.left}px`;
+        spark.style.top = `${e.clientY - rect.top}px`;
+        interactiveZone.appendChild(spark);
+        setTimeout(() => spark.remove(), 1200);
+        return;
+      }
+
+      if (isListening) {
+        // Audio recognized pulse
+        const spark = document.createElement('div');
+        spark.className = 'absolute pointer-events-none text-cyan-600 font-bold text-xs animate-bounce z-40 bg-white/95 px-3 py-1 rounded-full shadow-md border border-cyan-300 flex items-center gap-1';
+        spark.innerHTML = '<span>🎙️ Voice captured!</span>';
+        const rect = interactiveZone.getBoundingClientRect();
+        spark.style.left = `${e.clientX - rect.left}px`;
+        spark.style.top = `${e.clientY - rect.top}px`;
+        interactiveZone.appendChild(spark);
+        setTimeout(() => spark.remove(), 1200);
+        return;
+      }
+
+      triggerRandomEmotion();
+
+      const rect = interactiveZone.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const spark = document.createElement('div');
+      spark.className = 'absolute pointer-events-none text-cyan-600 font-bold text-sm animate-bounce z-40 bg-white/90 px-2.5 py-1 rounded-full shadow-md border border-cyan-200';
+      spark.style.left = `${x}px`;
+      spark.style.top = `${y}px`;
+      spark.textContent = '✨ Beep Boop!';
+      interactiveZone.appendChild(spark);
+
+      setTimeout(() => spark.remove(), 1100);
+    });
+
+    // Touch/Mouse movement tracking - robot eyes softly follow pointer
+    window.addEventListener('mousemove', (e) => {
+      if (isInteracting && currentEmotion !== 'neutral' && currentEmotion !== 'searching') return;
+
+      const { innerWidth, innerHeight } = window;
+      const xRatio = (e.clientX / innerWidth - 0.5) * 2; // -1 to 1
+      const yRatio = (e.clientY / innerHeight - 0.5) * 2;
+
+      // Soft head tilt
+      if (currentEmotion !== 'searching') {
+        robotHead.style.transform = `rotate(${xRatio * 2.8}deg) translate(${xRatio * 3}px, ${yRatio * 2}px)`;
+        // Eye tracking
+        eyesContainer.style.transform = `translate(${xRatio * 8}px, ${yRatio * 5}px)`;
+        // Floating front paws sway gently with perspective
+        leftHand.style.transform = `translate(${xRatio * 5}px, ${yRatio * 3}px)`;
+        rightHand.style.transform = `translate(${xRatio * 5}px, ${yRatio * 3}px)`;
+      } else {
+        // While in deadpan searching mode, gaze stays locked and concentrated
+        eyesContainer.style.transform = `translate(0px, 0px)`;
+      }
+    });
+
+    // ------------------------------------------------------------------
+    // RANDOM EMOTIONS (idle behaviour)
+    // ------------------------------------------------------------------
+    const RANDOM_EMOTIONS = ['happy', 'wink', 'curious', 'love'];
+    let lastRandomEmotion = null;
+    let currentTaskText = '';
+    let currentTaskLabel = '';
+    let lastBridgeEvent = 0;
+    let taskSafetyTimeout = null;
+
+    function triggerRandomEmotion() {
+      const choices = RANDOM_EMOTIONS.filter(e => e !== lastRandomEmotion);
+      lastRandomEmotion = choices[Math.floor(Math.random() * choices.length)];
+      triggerEmotion(lastRandomEmotion);
+    }
+
+    function scheduleRandomEmotion() {
+      const delay = Math.random() * 6000 + 7000; // every 7-13 seconds
+      setTimeout(() => {
+        const busy =
+          isListening ||
+          isInteracting ||
+          currentEmotion === 'searching' ||
+          (Date.now() - lastBridgeEvent) < 8000;
+        if (!busy) triggerRandomEmotion();
+        scheduleRandomEmotion();
+      }, delay);
+    }
+    scheduleRandomEmotion();
+
+    // ------------------------------------------------------------------
+    // TASK ANIMATION (searching/typing look) - only while Python is working
+    // ------------------------------------------------------------------
+    function startTaskAnimation(label, hint) {
+      currentTaskLabel = (label || 'WORKING...').toUpperCase();
+      currentTaskText = hint || 'Working on it...';
+      triggerEmotion('searching');
+
+      // Safety net: never stay stuck in task mode forever
+      clearTimeout(taskSafetyTimeout);
+      taskSafetyTimeout = setTimeout(stopTaskAnimation, 45000);
+    }
+
+    function stopTaskAnimation() {
+      clearTimeout(taskSafetyTimeout);
+      if (currentEmotion === 'searching') {
+        returnToCalm();
+      }
+      currentTaskText = '';
+      currentTaskLabel = '';
+    }
+
+    // Words in Python status text that mean "a task is running"
+    const TASK_WORDS = ['search', 'open', 'find', 'launch', 'execut', 'process',
+                        'work', 'look', 'download', 'creat', 'click', 'typing',
+                        'play', 'fetch', 'check'];
+    // Words that mean "task finished / nothing happening"
+    const IDLE_WORDS = ['idle', 'ready', 'online', 'done', 'complete', 'finish',
+                        'stopp', 'cancel', 'error', 'fail', 'not found'];
+
+    function handleBridgeStatus(status) {
+      lastBridgeEvent = Date.now();
+      const text = String(status || '');
+      const lower = text.toLowerCase();
+
+      if (lower.includes('listening')) return; // mic animation is handled by the mic button
+
+      if (IDLE_WORDS.some(w => lower.includes(w))) {
+        stopTaskAnimation();
+        statusLabel.textContent = 'ONLINE';
+        return;
+      }
+      if (TASK_WORDS.some(w => lower.includes(w))) {
+        startTaskAnimation(text, text);
+        return;
+      }
+      statusLabel.textContent = text.toUpperCase();
+    }
+
+    function handleBridgeCommand(command) {
+      lastBridgeEvent = Date.now();
+      startTaskAnimation('WORKING...', 'Working on: ' + command);
+    }
+
+    function handleBridgeResponse(response) {
+      lastBridgeEvent = Date.now();
+      stopTaskAnimation();
+      hintIcon.textContent = '💬';
+      hintText.textContent = response;
+    }
+
+    // Manual hooks (can also be called from Python via runJavaScript)
+    window.startTaskAnimation = startTaskAnimation;
+    window.stopTaskAnimation = stopTaskAnimation;
+  </script>
+</body></html>

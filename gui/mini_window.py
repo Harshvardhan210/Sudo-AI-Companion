@@ -12,8 +12,11 @@ from gui.assistant_bridge import AssistantBridge
 
 
 # ---------------- Window settings (change these if you like) ----------------
-WINDOW_WIDTH = 400
-WINDOW_HEIGHT = 580
+ZOOM = 0.32                 # smaller = lower number (0.25 tiny, 0.4 medium)
+DESIGN_WIDTH = 380          # size of the design in the HTML (don't change)
+DESIGN_HEIGHT = 540
+WINDOW_WIDTH = int(DESIGN_WIDTH * ZOOM)
+WINDOW_HEIGHT = int(DESIGN_HEIGHT * ZOOM)
 SCREEN_MARGIN = 12          # gap from the right edge of the screen
 VERTICAL_POSITION = "center"  # "center", "top" or "bottom"
 # ----------------------------------------------------------------------------
@@ -75,6 +78,7 @@ class MiniAssistantWindow(QMainWindow):
         self.web_view.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.web_view.setStyleSheet("background: transparent;")
         self.web_view.page().setBackgroundColor(QColor(0, 0, 0, 0))
+        self.web_view.setZoomFactor(ZOOM)
         self.setCentralWidget(self.web_view)
 
         settings = self.web_view.settings()
@@ -109,11 +113,13 @@ class MiniAssistantWindow(QMainWindow):
         self.channel.registerObject("windowController", self.window_controller)
         self.web_view.page().setWebChannel(self.channel)
 
-        self.web_view.loadFinished.connect(
-            lambda success: print("HTML loaded:", success)
-        )
+        self.web_view.loadFinished.connect(self.on_load_finished)
 
         self.load_frontend()
+
+    def on_load_finished(self, success):
+        print("HTML loaded:", success)
+        self.web_view.setZoomFactor(ZOOM)  # keep the small size after loading
 
     def move_to_right_side(self):
         """Place the window on the right edge of the primary screen."""

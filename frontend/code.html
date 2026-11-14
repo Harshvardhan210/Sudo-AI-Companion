@@ -254,8 +254,6 @@
     .ceramic-chassis {
       background: linear-gradient(145deg, #ffffff 0%, #f8fafc 45%, #e2e8f0 100%);
       box-shadow: 
-        0 24px 60px -8px rgba(15, 23, 42, 0.16),
-        0 8px 24px -4px rgba(14, 165, 233, 0.15),
         inset 0 2px 4px rgba(255, 255, 255, 1),
         inset 0 -4px 10px rgba(203, 213, 225, 0.6);
     }
@@ -297,7 +295,6 @@
     /* Action buttons frosted look */
     .action-btn-glass {
       background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.85) 100%);
-      backdrop-filter: blur(12px);
       box-shadow: 
         0 8px 20px -4px rgba(15, 23, 42, 0.12),
         0 2px 6px -1px rgba(14, 165, 233, 0.08),
@@ -308,7 +305,6 @@
     /* Holographic keyboard styling */
     .holo-deck {
       background: linear-gradient(180deg, rgba(6, 182, 212, 0.18) 0%, rgba(14, 165, 233, 0.08) 100%);
-      backdrop-filter: blur(4px);
       box-shadow: 0 10px 25px -3px rgba(6, 182, 212, 0.35), inset 0 0 12px rgba(56, 189, 248, 0.45);
       perspective: 600px;
     }
@@ -316,7 +312,6 @@
     /* Thought Cloud Styling */
     .thought-bubble-glass {
       background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(12px);
       box-shadow: 
         0 14px 35px -5px rgba(6, 182, 212, 0.22),
         0 4px 12px rgba(15, 23, 42, 0.08),
@@ -331,26 +326,17 @@
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col items-center justify-between p-4 overflow-hidden relative select-none">
 <!-- Minimal Header -->
-<header class="w-full max-w-sm flex items-center justify-between z-10 pt-3 px-2 cursor-move" id="app-header" title="Drag to move">
-<div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/75 border border-slate-200/80 backdrop-blur-md shadow-sm">
-<span class="relative flex h-2 w-2">
-<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-500 opacity-75"></span>
-<span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-</span>
-<span class="text-xs font-semibold tracking-wider text-slate-700 uppercase">AI Companion</span>
-</div>
+<header class="absolute top-1 right-1 flex items-center justify-end z-20 cursor-move" id="app-header" title="Drag to move">
 <div class="flex items-center gap-1.5">
-<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/75 border border-slate-200/80 backdrop-blur-md shadow-sm transition-all duration-300" id="status-pill">
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/75 border border-slate-200/80 shadow-sm transition-all duration-300" id="status-pill" style="display:none">
 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" id="status-indicator"></span>
 <span class="text-[11px] font-semibold text-slate-700" id="status-label">ONLINE</span>
 </div>
-<button aria-label="Close assistant" title="Close" class="cursor-pointer w-7 h-7 rounded-full bg-white/75 border border-slate-200/80 backdrop-blur-md shadow-sm flex items-center justify-center text-slate-500 text-sm font-bold leading-none hover:text-rose-500 hover:border-rose-200 transition-colors" id="btn-close" onclick="closeAssistantWindow(event)">&#10005;</button>
+<button aria-label="Close assistant" title="Close" class="cursor-pointer w-12 h-12 rounded-full bg-white/90 border border-slate-200/80 shadow-sm flex items-center justify-center text-slate-600 text-2xl font-bold leading-none hover:text-rose-500 hover:border-rose-200 transition-colors" id="btn-close" onclick="closeAssistantWindow(event)">&#10005;</button>
 </div>
 </header>
 <!-- Interactive Robot Area -->
 <main class="w-full flex-1 flex flex-col items-center justify-center relative z-10 cursor-pointer py-4" id="robot-interactive-zone" title="Tap or click me!">
-<!-- Outer Ambient Glow behind Robot -->
-<div class="absolute w-72 h-72 rounded-full bg-cyan-300/35 blur-3xl animate-aura pointer-events-none"></div>
 <!-- Combined Robot Container -->
 <div class="relative flex items-center justify-center">
 <!-- Futuristic Thought Cloud (Active during Searching Mode) -->
@@ -510,30 +496,28 @@
 </div>
 </div>
 <!-- Round Action Buttons (Mic & Stop) Placed Right Below the Floating Hands -->
-<div class="flex items-center justify-center gap-5 mt-7 z-30" onclick="event.stopPropagation()">
+<div class="flex items-center justify-center gap-8 mt-6 z-30" onclick="event.stopPropagation()">
 <!-- Mic Button (Voice Input / Listening Mode) -->
 <div class="relative flex flex-col items-center group">
 <!-- Active Pulse Ring (Hidden until active) -->
-<div class="absolute -inset-1.5 rounded-full bg-cyan-400/40 pointer-events-none opacity-0" id="mic-pulse-ring"></div>
-<button aria-label="Microphone / Voice input" class="action-btn-glass relative w-12 h-12 rounded-full border border-white/90 flex items-center justify-center text-slate-600 transition-all duration-300 hover:scale-110 active:scale-95 hover:text-cyan-600 hover:border-cyan-300/80 shadow-[0_6px_18px_rgba(15,23,42,0.08)] group-hover:shadow-[0_8px_24px_rgba(6,182,212,0.22)]" id="btn-mic" onclick="toggleListeningMode(event)">
-<span class="material-symbols-outlined text-[23px] transition-transform duration-200 group-hover:scale-105" id="mic-icon">mic</span>
+<div class="absolute -inset-2.5 rounded-full bg-cyan-400/40 pointer-events-none opacity-0" id="mic-pulse-ring"></div>
+<button aria-label="Microphone / Voice input" class="action-btn-glass relative w-[72px] h-[72px] rounded-full border border-white/90 flex items-center justify-center text-slate-600 transition-all duration-300 hover:scale-110 active:scale-95 hover:text-cyan-600 hover:border-cyan-300/80 shadow-[0_6px_18px_rgba(15,23,42,0.08)] group-hover:shadow-[0_8px_24px_rgba(6,182,212,0.22)]" id="btn-mic" onclick="toggleListeningMode(event)">
+<span class="material-symbols-outlined text-[44px] transition-transform duration-200 group-hover:scale-105" id="mic-icon">mic</span>
 <!-- Tiny Status Dot for Mic -->
-<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400 opacity-0 transition-opacity duration-300" id="mic-status-dot"></span>
+<span class="absolute top-3 right-3 w-3.5 h-3.5 rounded-full bg-cyan-400 opacity-0 transition-opacity duration-300" id="mic-status-dot"></span>
 </button>
-<span class="text-[10px] font-semibold text-slate-500 tracking-wide mt-1.5 transition-colors duration-200 group-hover:text-cyan-600" id="mic-label">Mic</span>
+<span class="text-[10px] font-semibold text-slate-500 tracking-wide mt-1.5 transition-colors duration-200 group-hover:text-cyan-600" id="mic-label" style="display:none">Mic</span>
 </div>
 <!-- Stop Button (Cancel / Reset to Idle) -->
 <div class="relative flex flex-col items-center group">
-<button aria-label="Stop actions / Reset" class="action-btn-glass relative w-12 h-12 rounded-full border border-white/90 flex items-center justify-center text-slate-600 transition-all duration-300 hover:scale-110 active:scale-95 hover:text-rose-500 hover:border-rose-200/90 shadow-[0_6px_18px_rgba(15,23,42,0.08)] group-hover:shadow-[0_8px_24px_rgba(244,63,94,0.18)]" id="btn-stop" onclick="stopAllActions(event)">
-<span class="material-symbols-outlined text-[22px] transition-transform duration-200 group-hover:scale-105 text-slate-700 group-hover:text-rose-500">stop</span>
+<button aria-label="Stop actions / Reset" class="action-btn-glass relative w-[72px] h-[72px] rounded-full border border-white/90 flex items-center justify-center text-slate-600 transition-all duration-300 hover:scale-110 active:scale-95 hover:text-rose-500 hover:border-rose-200/90 shadow-[0_6px_18px_rgba(15,23,42,0.08)] group-hover:shadow-[0_8px_24px_rgba(244,63,94,0.18)]" id="btn-stop" onclick="stopAllActions(event)">
+<span class="material-symbols-outlined text-[44px] transition-transform duration-200 group-hover:scale-105 text-slate-700 group-hover:text-rose-500">stop</span>
 </button>
-<span class="text-[10px] font-semibold text-slate-500 tracking-wide mt-1.5 transition-colors duration-200 group-hover:text-rose-500">Stop</span>
+<span class="text-[10px] font-semibold text-slate-500 tracking-wide mt-1.5 transition-colors duration-200 group-hover:text-rose-500" style="display:none">Stop</span>
 </div>
 </div>
-<!-- Soft Floor Projection Shadow -->
-<div class="w-48 h-4 rounded-full bg-slate-400/35 blur-md animate-shadow mt-4 pointer-events-none"></div>
 <!-- Friendly Tap Prompt Hint -->
-<div class="mt-3 flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/80 border border-slate-200/90 text-slate-600 text-xs font-medium backdrop-blur shadow-sm transition-all duration-300 hover:border-cyan-300" id="tap-hint">
+<div class="mt-3 flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/80 border border-slate-200/90 text-slate-600 text-xs font-medium backdrop-blur shadow-sm transition-all duration-300 hover:border-cyan-300" id="tap-hint" style="display:none">
 <span class="text-cyan-500" id="hint-icon">✨</span>
 <span id="hint-text">Tap anywhere to play with me!</span>
 </div>
@@ -1120,6 +1104,8 @@
     interactiveZone.addEventListener('click', (e) => {
       // Ignore if clicking action buttons container
       if (e.target.closest('#btn-mic') || e.target.closest('#btn-stop')) return;
+      // Ignore the click that ends a window drag
+      if (dragMoved) { dragMoved = false; return; }
 
       if (currentEmotion === 'searching') {
         // Quick burst typing feedback on keyboard tap
@@ -1292,5 +1278,27 @@
       if (event) event.stopPropagation();
       if (windowController) windowController.closeApp();
     }
+
+    // Drag the whole window by pressing on the robot and moving the mouse.
+    let dragStart = null;
+    let dragMoved = false;
+
+    interactiveZone.addEventListener('mousedown', (e) => {
+      if (e.button !== 0 || e.target.closest('#btn-mic') || e.target.closest('#btn-stop')) return;
+      dragStart = { x: e.clientX, y: e.clientY };
+      dragMoved = false;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!dragStart || !(e.buttons & 1)) { dragStart = null; return; }
+      const dist = Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y);
+      if (dist > 6 && windowController) {
+        dragMoved = true;
+        dragStart = null;
+        windowController.startMove();
+      }
+    });
+
+    window.addEventListener('mouseup', () => { dragStart = null; });
   </script>
 </body></html>

@@ -607,6 +607,7 @@
     let isInteracting = false;
     let currentEmotion = 'neutral';
     let isListening = false;
+    let continuousListening = false;   // true from Mic click until Stop is pressed
     let listeningWaveInterval = null;
     let searchScanInterval = null;
     let keyGlitchInterval = null;
@@ -753,16 +754,8 @@
     function toggleListeningMode(event) {
     if (event) event.stopPropagation();
 
-    // If already listening, stop the current listening request.
-    if (isListening) {
-        if (bridgeReady && assistantBridge) {
-            assistantBridge.stopListening();
-        }
-
-        deactivateListeningMode();
-        returnToCalm();
-        return;
-    }
+    // Already listening continuously: only the Stop button turns it off.
+    if (continuousListening) return;
 
     // Do not activate the visual animation if Python is disconnected.
     if (!bridgeReady || !assistantBridge) {
@@ -774,9 +767,14 @@
         return;
     }
 
-    // Start Python voice recognition exactly once.
+    // Start Python continuous listening (wake word: "sudo").
     assistantBridge.startListening();
+    continuousListening = true;
+    activateListeningVisuals();
+}
 
+// Shows the "listening" look (also restored after each command finishes).
+function activateListeningVisuals() {
     // Stop other animations first.
     clearTimeout(window.emotionTimeout);
     clearSearchingEffects();
@@ -860,6 +858,8 @@
     // Stop button handler: cancels listening, search typing, or active emotion and returns to neutral
     function stopAllActions(event) {
     if (event) event.stopPropagation();
+
+    continuousListening = false;
 
     // Ask Python to stop listening.
     if (bridgeReady && assistantBridge) {
@@ -1221,6 +1221,11 @@
       }
       currentTaskText = '';
       currentTaskLabel = '';
+
+      // Mic is still on: show the listening look again
+      if (continuousListening && !isListening) {
+        activateListeningVisuals();
+      }
     }
 
     // Words in Python status text that mean "a task is running"
@@ -1237,6 +1242,16 @@
       const lower = text.toLowerCase();
 
       if (lower.includes('listening')) return; // mic animation is handled by the mic button
+
+      // Python's listening loop has ended (after Stop, or after a mic error)
+      if (lower.includes('online')) {
+        continuousListening = false;
+        deactivateListeningMode();
+        stopTaskAnimation();
+        if (currentEmotion === 'listening') returnToCalm();
+        statusLabel.textContent = 'ONLINE';
+        return;
+      }
 
       if (IDLE_WORDS.some(w => lower.includes(w))) {
         stopTaskAnimation();

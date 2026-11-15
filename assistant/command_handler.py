@@ -4,6 +4,8 @@ from features.reminder import reminders
 
 from features.app_closer import parse_close_command, close_application
 
+from features.web_tools import handle_web_command
+
 from features.file_search import (
     search_files,
     open_folder,
@@ -58,6 +60,15 @@ def process_command(command):
         return close_application(target, force)
 
     # -----------------------------
+    # WEB: search, open website, play YouTube video
+    # -----------------------------
+
+    web_response = handle_web_command(command)
+
+    if web_response is not None:
+        return web_response
+
+    # -----------------------------
     # BASIC COMMANDS
     # -----------------------------
 
@@ -87,6 +98,15 @@ FOLDERS:
 - Open Documents
 - Open Downloads
 - Open Pictures
+
+WEB:
+- Google python tutorials
+- Search the web for best laptops
+- Search YouTube for lofi music
+- Play shape of you
+- Open YouTube
+- Open github.com
+- Go to flipkart
 
 REMINDERS:
 - Remind me in 5 minutes

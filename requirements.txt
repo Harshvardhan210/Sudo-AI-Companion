@@ -3,3 +3,4 @@ PyAudio
 pyttsx3
 psutil
 pycaw
+psutil

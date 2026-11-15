@@ -406,6 +406,16 @@
 <div class="w-full h-full rounded-[42px] visor-glass border border-slate-800/80 flex flex-col items-center justify-between p-6 relative overflow-hidden" id="visor-screen">
 <!-- Visor Diagonal Sheen -->
 <div class="absolute -top-20 -left-20 w-36 h-80 bg-gradient-to-r from-transparent via-white/12 to-transparent rotate-45 pointer-events-none"></div>
+<!-- Reminder countdown screen: covers the face while a reminder is active -->
+<div id="reminder-overlay" style="display:none" class="absolute inset-0 z-20 visor-glass rounded-[42px] flex flex-col items-center justify-center px-4 text-center">
+<div id="reminder-label" class="text-[11px] tracking-[0.25em] font-semibold text-cyan-300/70 mb-2">REMINDER</div>
+<div id="reminder-time" class="font-mono font-bold text-cyan-300 leading-none" style="font-size:58px; font-variant-numeric:tabular-nums; text-shadow:0 0 14px #38bdf8, 0 0 30px rgba(56,189,248,0.7)">00:00</div>
+<div id="reminder-name" class="mt-3 max-w-full text-[17px] font-semibold text-cyan-100 truncate" style="text-shadow:0 0 8px rgba(56,189,248,0.5)"></div>
+<div id="reminder-progress-track" class="mt-3 w-40 h-1.5 rounded-full bg-cyan-900/60 overflow-hidden">
+<div id="reminder-progress" class="h-full rounded-full bg-cyan-400" style="width:100%; box-shadow:0 0 8px #38bdf8"></div>
+</div>
+<div id="reminder-more" class="mt-2 text-[11px] text-cyan-300/60 h-3"></div>
+</div>
 <!-- Eyes Cluster -->
 <div class="flex items-center justify-center gap-9 w-full transition-all duration-300 ease-out my-auto pt-2" id="eyes-container">
 <!-- Left Eye -->
@@ -573,6 +583,20 @@
     let bridgeReady = false;
     let windowController = null;
 
+    // Connect to a Python signal without letting one failure break the rest.
+    function safeConnect(signalName, handler) {
+        try {
+            if (!assistantBridge || !assistantBridge[signalName]) {
+                console.error("Python signal missing: " + signalName +
+                              " - is gui/assistant_bridge.py the latest version?");
+                return;
+            }
+            assistantBridge[signalName].connect(handler);
+        } catch (e) {
+            console.error("Could not connect signal " + signalName, e);
+        }
+    }
+
     function connectPythonBridge() {
         if (typeof QWebChannel === "undefined") {
             console.error("QWebChannel is not available.");
@@ -608,6 +632,17 @@
                 console.log("Recognized command:", command);
                 handleBridgeCommand(command);
             });
+
+            // Reminders: countdown list, time-is-up alert, finished speaking
+            safeConnect("remindersChanged", function(json) { handleRemindersChanged(json); });
+            safeConnect("reminderDue",      function(name) { handleReminderDue(name); });
+            safeConnect("reminderDone",     function(name) { handleReminderDone(name); });
+
+            try {
+                assistantBridge.requestReminders();
+            } catch (e) {
+                console.error("requestReminders failed - is gui/assistant_bridge.py the latest version?", e);
+            }
         });
     }
 
@@ -1232,6 +1267,8 @@ function activateListeningVisuals() {
           isListening ||
           isInteracting ||
           textMode ||
+          activeReminders.length > 0 ||
+          dueQueue.length > 0 ||
           currentEmotion === 'searching' ||
           (Date.now() - lastBridgeEvent) < 8000;
         if (!busy) triggerRandomEmotion();
@@ -1432,5 +1469,120 @@ function activateListeningVisuals() {
     document.getElementById('text-grip').addEventListener('mousedown', (e) => {
       if (e.button === 0 && windowController) windowController.startMove();
     });
+
+    // ------------------------------------------------------------------
+    // REMINDERS: the robot face becomes a countdown timer
+    // ------------------------------------------------------------------
+    let activeReminders = [];   // from Python: [{id, name, total, ends_at_ms}]
+    let dueQueue = [];          // names currently being announced
+
+    const reminderOverlay  = document.getElementById('reminder-overlay');
+    const reminderLabel    = document.getElementById('reminder-label');
+    const reminderTime     = document.getElementById('reminder-time');
+    const reminderNameEl   = document.getElementById('reminder-name');
+    const reminderTrack    = document.getElementById('reminder-progress-track');
+    const reminderProgress = document.getElementById('reminder-progress');
+    const reminderMore     = document.getElementById('reminder-more');
+
+    function capitalizeFirst(text) {
+      return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+    }
+
+    function formatClock(totalSeconds) {
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      const mm = String(m).padStart(2, '0');
+      const ss = String(s).padStart(2, '0');
+      return h > 0 ? h + ':' + mm + ':' + ss : mm + ':' + ss;
+    }
+
+    function updateReminderDisplay() {
+      // Time is up: flash 00:00 and show the reminder name
+      if (dueQueue.length) {
+        reminderOverlay.style.display = 'flex';
+        reminderLabel.textContent = "TIME'S UP";
+        reminderTime.textContent = '00:00';
+        reminderTime.classList.add('animate-pulse');
+        reminderNameEl.textContent = capitalizeFirst(dueQueue[0]);
+        reminderNameEl.classList.remove('truncate');
+        reminderNameEl.style.whiteSpace = 'normal';
+        reminderTrack.style.display = 'none';
+        reminderMore.textContent = '';
+        return;
+      }
+
+      if (!activeReminders.length) {
+        reminderOverlay.style.display = 'none';
+        return;
+      }
+
+      // Countdown for the reminder that finishes first
+      const next = activeReminders.reduce((a, b) => (a.ends_at_ms <= b.ends_at_ms ? a : b));
+      const remainingMs = Math.max(0, next.ends_at_ms - Date.now());
+      const remainingSec = Math.ceil(remainingMs / 1000);
+
+      reminderOverlay.style.display = 'flex';
+      reminderLabel.textContent = 'REMINDER';
+      reminderTime.textContent = formatClock(remainingSec);
+      reminderTime.style.fontSize = remainingSec >= 3600 ? '40px' : '58px';
+      reminderTime.classList.remove('animate-pulse');
+      reminderNameEl.textContent = capitalizeFirst(next.name);
+      reminderNameEl.classList.add('truncate');
+      reminderNameEl.style.whiteSpace = '';
+      reminderTrack.style.display = '';
+      reminderProgress.style.width = (next.total > 0 ? (remainingMs / (next.total * 1000)) * 100 : 0) + '%';
+      reminderMore.textContent = activeReminders.length > 1
+        ? '+' + (activeReminders.length - 1) + ' more'
+        : '';
+    }
+
+    let lastRemindersJson = null;
+
+    function handleRemindersChanged(json) {
+      if (json !== lastRemindersJson) {
+        lastRemindersJson = json;
+        console.log("Reminders updated:", json);
+      }
+      try {
+        activeReminders = JSON.parse(json) || [];
+      } catch (e) {
+        activeReminders = [];
+      }
+      updateReminderDisplay();
+    }
+
+    function handleReminderDue(name) {
+      lastBridgeEvent = Date.now();
+      dueQueue.push(name);
+      if (textMode) showTextReply('Reminder: ' + name);
+      updateReminderDisplay();
+
+      // Safety: never leave the alert on screen forever
+      setTimeout(() => {
+        const idx = dueQueue.indexOf(name);
+        if (idx !== -1) {
+          dueQueue.splice(idx, 1);
+          updateReminderDisplay();
+        }
+      }, 40000);
+    }
+
+    function handleReminderDone(name) {
+      const idx = dueQueue.indexOf(name);
+      if (idx !== -1) dueQueue.splice(idx, 1);
+      updateReminderDisplay();
+    }
+
+    setInterval(updateReminderDisplay, 250);
+
+    // Backup: ask Python for the reminder list every second, in case a signal is missed.
+    setInterval(() => {
+      if (bridgeReady && assistantBridge && typeof assistantBridge.getReminders === 'function') {
+        assistantBridge.getReminders(function(json) { handleRemindersChanged(json); });
+      }
+    }, 1000);
+
+    console.log("code.html loaded: reminders-v2");
   </script>
 </body></html>

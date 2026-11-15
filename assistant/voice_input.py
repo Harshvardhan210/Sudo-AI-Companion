@@ -54,7 +54,7 @@ def clean_command(text):
     return " ".join(cleaned.split())
 
 
-def listen_continuously(should_stop, is_paused):
+def listen_continuously(should_stop, is_paused, is_expecting_answer=None):
     """
     Keep the microphone open and yield a command every time the user says
     one that starts with the wake word ("sudo ...").
@@ -62,6 +62,9 @@ def listen_continuously(should_stop, is_paused):
     should_stop() -> True when listening must end (Stop button)
     is_paused()   -> True while the assistant is busy or speaking, so it
                      does not hear its own voice
+    is_expecting_answer() -> True while the assistant has asked a question
+                     (like a reminder name). The next phrase is then taken
+                     as the answer, without needing the wake word.
     """
 
     recognizer = sr.Recognizer()
@@ -123,6 +126,14 @@ def listen_continuously(should_stop, is_paused):
             print("Heard:", text)
 
             heard_wake, command = extract_wake_command(text)
+
+            # The assistant asked a question: this phrase is the answer.
+            if is_expecting_answer and is_expecting_answer():
+                answer = command if heard_wake else clean_command(text)
+                if answer:
+                    follow_up_until = 0.0
+                    yield answer
+                continue
 
             if heard_wake and command:
                 follow_up_until = 0.0

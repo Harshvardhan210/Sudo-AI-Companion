@@ -1,5 +1,9 @@
 from features.app_launcher import open_application
 
+from features.reminder import reminders
+
+from features.app_closer import parse_close_command, close_application
+
 from features.file_search import (
     search_files,
     open_folder,
@@ -30,6 +34,30 @@ def process_command(command):
     command = command.lower().strip()
 
     # -----------------------------
+    # REMINDERS
+    # -----------------------------
+
+    # The assistant asked for a reminder name: this reply is the name.
+    if reminders.has_pending():
+        return reminders.handle_name(command)
+
+    if reminders.is_reminder_request(command):
+        return reminders.start_request(command)
+
+    if reminders.is_cancel_request(command):
+        return reminders.cancel_all()
+
+    # -----------------------------
+    # CLOSE APPLICATIONS
+    # -----------------------------
+
+    close_request = parse_close_command(command)
+
+    if close_request:
+        target, force = close_request
+        return close_application(target, force)
+
+    # -----------------------------
     # BASIC COMMANDS
     # -----------------------------
 
@@ -45,6 +73,8 @@ APPLICATIONS:
 - Open VS Code
 - Open Notepad
 - Open Calculator
+- Close Notepad
+- Force close Chrome
 
 FILE SEARCH:
 - Find my resume
@@ -57,6 +87,11 @@ FOLDERS:
 - Open Documents
 - Open Downloads
 - Open Pictures
+
+REMINDERS:
+- Remind me in 5 minutes
+- Remind me to drink water in 10 minutes
+- Cancel reminders
 
 SYSTEM CONTROL:
 - What time is it

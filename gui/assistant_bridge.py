@@ -1,3 +1,4 @@
+import json
 import re
 import time
 
@@ -6,6 +7,7 @@ from PySide6.QtCore import QObject, QThread, QTimer, Signal, Slot
 from assistant.voice_input import listen_continuously, WAKE_WORDS
 from assistant.command_handler import process_command
 from assistant.voice_output import speak
+from features.reminder import reminders, PENDING_SECONDS
 
 
 # Speak the answer aloud for commands typed in the search bar?
@@ -23,6 +25,14 @@ class VoiceWorker(QThread):
         super().__init__()
         self._paused = False
         self._ignore_until = 0.0
+        self._answer_until = 0.0
+
+    def expect_answer(self, seconds):
+        """The assistant asked a question: next phrase needs no wake word."""
+        self._answer_until = time.time() + seconds
+
+    def _is_expecting_answer(self):
+        return time.time() < self._answer_until
 
     def pause(self):
         """Stop picking up speech (while a command runs / the assistant talks)."""
@@ -43,10 +53,12 @@ class VoiceWorker(QThread):
         try:
             for command in listen_continuously(
                 self._should_stop,
-                self._is_paused
+                self._is_paused,
+                self._is_expecting_answer
             ):
                 # Stay silent until the assistant has finished answering.
                 self._paused = True
+                self._answer_until = 0.0
                 self.command_ready.emit(command)
 
         except OSError as error:
@@ -64,10 +76,81 @@ class AssistantBridge(QObject):
     commandRecognized = Signal(str)
     assistantResponse = Signal(str)
     statusChanged = Signal(str)
+    remindersChanged = Signal(str)   # JSON list of active reminders (for the countdown)
+    reminderDue = Signal(str)        # a reminder's time is up (name)
+    reminderDone = Signal(str)       # finished speaking the reminder name
 
     def __init__(self):
         super().__init__()
         self.voice_worker = None
+
+        # Checks twice a second for finished reminders.
+        self._last_reminder_version = 0
+        self.reminder_timer = QTimer(self)
+        self.reminder_timer.setInterval(500)
+        self.reminder_timer.timeout.connect(self._reminder_tick)
+        self.reminder_timer.start()
+
+    # ------------------------------------------------------------------
+    # Reminders
+    # ------------------------------------------------------------------
+
+    def _sync_reminders(self):
+        """Send the active reminder list to the page when it changed."""
+        if reminders.version != self._last_reminder_version:
+            self._last_reminder_version = reminders.version
+            self.remindersChanged.emit(json.dumps(reminders.snapshot()))
+
+    @Slot(result=str)
+    def getReminders(self):
+        """The page asks for the current reminders (backup for the signal)."""
+        return json.dumps(reminders.snapshot())
+
+    @Slot()
+    def requestReminders(self):
+        """Called by the page when it loads, to get the current list."""
+        self._last_reminder_version = reminders.version
+        self.remindersChanged.emit(json.dumps(reminders.snapshot()))
+
+    def _reminder_tick(self):
+        # Nobody answered "What should I call this reminder?" in time.
+        expired = reminders.pop_expired_pending()
+        if expired:
+            message = "I didn't hear a name, so I used the default. " + expired
+            self.assistantResponse.emit(message)
+            self._sync_reminders()
+            QTimer.singleShot(150, lambda: self._speak_message(message))
+
+        for reminder in reminders.pop_due():
+            self.reminderDue.emit(reminder["name"])
+            name = reminder["name"]
+            # Short delay so the page can show the alert before speech blocks.
+            QTimer.singleShot(150, lambda n=name: self._speak_reminder(n))
+
+        self._sync_reminders()
+
+    def _speak_message(self, text):
+        worker = self.voice_worker
+        if worker is not None and worker.isRunning():
+            worker.pause()
+        try:
+            speak(text)
+        finally:
+            if worker is not None and worker.isRunning():
+                worker.resume()
+
+    def _speak_reminder(self, name):
+        worker = self.voice_worker
+        if worker is not None and worker.isRunning():
+            worker.pause()
+
+        try:
+            for _ in range(3):
+                speak(name)
+        finally:
+            if worker is not None and worker.isRunning():
+                worker.resume()
+            self.reminderDone.emit(name)
 
     @Slot()
     def startListening(self):
@@ -130,6 +213,12 @@ class AssistantBridge(QObject):
         try:
             response = process_command(command)
             self.assistantResponse.emit(response)
+            self._sync_reminders()
+
+            # The assistant asked for a reminder name: the next spoken phrase
+            # is the answer (no "sudo" needed).
+            if reminders.has_pending() and worker is not None and worker.isRunning():
+                worker.expect_answer(PENDING_SECONDS)
 
         except Exception as error:
             print("Command error:", error)

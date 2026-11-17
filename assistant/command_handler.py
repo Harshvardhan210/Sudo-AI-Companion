@@ -6,6 +6,18 @@ from features.app_closer import parse_close_command, close_application
 
 from features.web_tools import handle_web_command
 
+from features.notes import notes, Reply
+
+from features.todo import todos
+
+from assistant.voice_input import strip_wake_word
+
+from assistant.voice_output import (
+    next_voice,
+    set_voice_gender,
+    change_speed
+)
+
 from features.file_search import (
     search_files,
     open_folder,
@@ -33,7 +45,15 @@ pending_action = None
 def process_command(command):
     global pending_action
 
-    command = command.lower().strip()
+    original = command.strip()
+    command = original.lower()
+
+    # "sudo ..." can arrive with the wake word still attached (while taking
+    # notes, or when typed). Keep both versions.
+    heard_wake, without_wake = strip_wake_word(original)
+
+    if heard_wake and not without_wake:
+        return "Yes? Say your command."
 
     # -----------------------------
     # REMINDERS
@@ -41,7 +61,38 @@ def process_command(command):
 
     # The assistant asked for a reminder name: this reply is the name.
     if reminders.has_pending():
-        return reminders.handle_name(command)
+        return reminders.handle_name(without_wake.lower() if heard_wake else command)
+
+    # The assistant asked "What's the task?": this reply is the task.
+    if todos.has_pending():
+        return todos.handle_pending(without_wake if heard_wake else original)
+
+    # -----------------------------
+    # NOTES (add a note / open notes / save notes)
+    # -----------------------------
+
+    notes_response = notes.handle(original, heard_wake, without_wake)
+
+    if notes_response is not None:
+        # Only one card (notes or to-do) is shown on the left at a time.
+        if notes.card_open and todos.card_open:
+            todos.close_card()
+        return notes_response
+
+    # -----------------------------
+    # TO-DO LIST (add task / show tasks / mark task done ...)
+    # -----------------------------
+
+    todo_response = todos.handle(original, heard_wake, without_wake)
+
+    if todo_response is not None:
+        if todos.card_open and notes.card_open:
+            notes.close_card()
+        return todo_response
+
+    # From here on the wake word is not needed.
+    if heard_wake:
+        command = without_wake.lower().strip()
 
     if reminders.is_reminder_request(command):
         return reminders.start_request(command)
@@ -67,6 +118,27 @@ def process_command(command):
 
     if web_response is not None:
         return web_response
+
+    # -----------------------------
+    # ROBOT VOICE
+    # -----------------------------
+
+    if command in ["change voice", "next voice", "switch voice"]:
+        return next_voice()
+
+    if command in ["male voice", "use male voice", "switch to male voice",
+                   "change to male voice", "use a male voice"]:
+        return set_voice_gender("male")
+
+    if command in ["female voice", "use female voice", "switch to female voice",
+                   "change to female voice", "use a female voice"]:
+        return set_voice_gender("female")
+
+    if command in ["speak faster", "talk faster", "speed up"]:
+        return change_speed(10)
+
+    if command in ["speak slower", "talk slower", "slow down"]:
+        return change_speed(-10)
 
     # -----------------------------
     # BASIC COMMANDS
@@ -98,6 +170,25 @@ FOLDERS:
 - Open Documents
 - Open Downloads
 - Open Pictures
+
+TO-DO LIST:
+- Add task buy milk
+- Show my tasks
+- Mark task 2 as done
+- Delete task 3
+- Clear completed tasks
+
+NOTES:
+- Add a note (then say each point)
+- Open notes
+- Save notes
+- Delete last point
+- Cancel notes
+
+ROBOT VOICE:
+- Change voice
+- Male voice / Female voice
+- Speak faster / Speak slower
 
 WEB:
 - Google python tutorials

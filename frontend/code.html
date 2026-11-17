@@ -10,6 +10,88 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <style>
+
+    /* --s converts "real screen pixels" to CSS pixels (Python sets it to 1 / zoom),
+       so the notes card stays readable even though the robot window is tiny. */
+    :root { --s: 3.125; }
+
+    body.notes-open { padding-left: calc(var(--s) * 284px); }
+
+    #notes-card {
+      position: absolute;
+      left: calc(var(--s) * 6px);
+      top: 50%;
+      transform: translateY(-50%);
+      width: calc(var(--s) * 272px);
+      max-height: calc(var(--s) * 420px);
+      flex-direction: column;
+      z-index: 15;
+      border-radius: calc(var(--s) * 24px);
+      padding: calc(var(--s) * 8px);
+      border: calc(var(--s) * 1px) solid #ffffff;
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 1),
+        inset 0 -4px 10px rgba(203, 213, 225, 0.6),
+        0 calc(var(--s) * 8px) calc(var(--s) * 18px) calc(var(--s) * -8px) rgba(15, 23, 42, 0.45);
+    }
+    #notes-screen {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      max-height: calc(var(--s) * 400px);
+      border-radius: calc(var(--s) * 17px);
+      border: calc(var(--s) * 1px) solid rgba(30, 41, 59, 0.8);
+      padding: calc(var(--s) * 12px) calc(var(--s) * 14px);
+      color: #e0f2fe;
+      font-size: calc(var(--s) * 13.5px);
+      line-height: 1.35;
+    }
+    .notes-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: calc(var(--s) * 6px);
+      font-size: calc(var(--s) * 11px); font-weight: 700; letter-spacing: 0.22em;
+      color: rgba(125, 211, 252, 0.85);
+      text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+    }
+    .notes-head .notes-count { letter-spacing: 0.05em; }
+    #notes-close {
+      cursor: pointer; margin-left: calc(var(--s) * 8px);
+      width: calc(var(--s) * 20px); height: calc(var(--s) * 20px);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      color: rgba(186, 230, 253, 0.8); background: rgba(56, 189, 248, 0.15);
+      font-size: calc(var(--s) * 11px); line-height: 1;
+    }
+    #notes-close:hover { background: rgba(244, 63, 94, 0.35); color: #fff; }
+    #notes-body { overflow-y: auto; min-height: 0; }
+    #notes-body::-webkit-scrollbar { width: calc(var(--s) * 5px); }
+    #notes-body::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.45); border-radius: 999px; }
+    .notes-section {
+      margin: calc(var(--s) * 10px) 0 calc(var(--s) * 2px);
+      font-size: calc(var(--s) * 10.5px); letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(125, 211, 252, 0.6);
+    }
+    .notes-section:first-child { margin-top: 0; }
+    .notes-section .live { color: #38bdf8; }
+    .note-item { display: flex; gap: calc(var(--s) * 8px); margin: calc(var(--s) * 5px) 0; }
+    .note-num {
+      flex: none; width: calc(var(--s) * 20px); height: calc(var(--s) * 20px); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(56, 189, 248, 0.18); color: #7dd3fc; font-weight: 700;
+      font-size: calc(var(--s) * 11px);
+    }
+    .note-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .todo-item { display: flex; gap: calc(var(--s) * 9px); margin: calc(var(--s) * 6px) 0; cursor: pointer; align-items: flex-start; }
+    .todo-box {
+      flex: none; width: calc(var(--s) * 18px); height: calc(var(--s) * 18px); border-radius: 50%;
+      margin-top: calc(var(--s) * 1px);
+      border: calc(var(--s) * 1.5px) solid rgba(125, 211, 252, 0.75);
+      display: flex; align-items: center; justify-content: center;
+      font-size: calc(var(--s) * 11px); font-weight: 800; color: transparent;
+    }
+    .todo-item:hover .todo-box { background: rgba(56, 189, 248, 0.2); }
+    .todo-item.done .todo-box { background: #38bdf8; border-color: #38bdf8; color: #0b1220; box-shadow: 0 0 calc(var(--s) * 8px) rgba(56, 189, 248, 0.7); }
+    .todo-item.done .note-text { text-decoration: line-through; opacity: 0.5; }
+    .notes-empty { color: rgba(186, 230, 253, 0.55); font-style: italic; margin: calc(var(--s) * 4px) 0; }
     #text-input {
       caret-color: #38bdf8;
       color: #e0f2fe;
@@ -549,6 +631,17 @@
 </div>
 </main>
 
+<!-- NOTES CARD: opens on the left of the robot (like the thought cloud, but on the other side) -->
+<div id="notes-card" style="display:none" class="ceramic-chassis">
+<div id="notes-screen" class="visor-glass">
+<div class="notes-head">
+<span id="notes-title">NOTES</span>
+<span style="display:flex; align-items:center"><span id="notes-count" class="notes-count"></span><span id="notes-close" title="Close" onclick="closeNotesCard()">&#10005;</span></span>
+</div>
+<div id="notes-body"></div>
+</div>
+</div>
+
 <!-- TEXT COMMAND MODE: search bar (double-click the robot to open, double-click the bar to go back) -->
 <div id="text-panel" style="display:none" class="absolute inset-0 flex-col items-stretch px-3 pt-9 pb-3 z-10">
 <div id="text-grip" title="Drag to move" class="absolute top-0 left-0 right-10 h-8 flex items-center justify-center cursor-move">
@@ -637,6 +730,21 @@
             safeConnect("remindersChanged", function(json) { handleRemindersChanged(json); });
             safeConnect("reminderDue",      function(name) { handleReminderDue(name); });
             safeConnect("reminderDone",     function(name) { handleReminderDone(name); });
+
+            safeConnect("notesChanged", function(json) { handleNotesChanged(json); });
+            safeConnect("todoChanged",  function(json) { handleTodoChanged(json); });
+
+            try {
+                assistantBridge.requestTodo();
+            } catch (e) {
+                console.error("requestTodo failed - is gui/assistant_bridge.py the latest version?", e);
+            }
+
+            try {
+                assistantBridge.requestNotes();
+            } catch (e) {
+                console.error("requestNotes failed - is gui/assistant_bridge.py the latest version?", e);
+            }
 
             try {
                 assistantBridge.requestReminders();
@@ -1428,6 +1536,7 @@ function activateListeningVisuals() {
 
       // Make the window bigger for typing (or small again for the robot)
       if (windowController) windowController.setTextMode(on);
+      applyNotesVisibility();   // the notes card is hidden in text mode
 
       if (on) {
         showTextReply('');
@@ -1583,6 +1692,210 @@ function activateListeningVisuals() {
       }
     }, 1000);
 
-    console.log("code.html loaded: reminders-v2");
+
+    // ------------------------------------------------------------------
+    // NOTES CARD (opens on the left of the robot)
+    // ------------------------------------------------------------------
+    let notesState = { visible: false, active: false, max: 10, draft: [], saved: [], saved_total: 0 };
+    let lastNotesShown = false;
+    let lastNotesJson = null;
+
+    const notesCard  = document.getElementById('notes-card');
+    const notesBody  = document.getElementById('notes-body');
+    const notesCount = document.getElementById('notes-count');
+
+    // Python sets this to 1 / zoom, so the card is readable at any window zoom
+    function setUiScale(zoom) {
+      if (zoom > 0) document.documentElement.style.setProperty('--s', String(1 / zoom));
+    }
+
+    function notesSection(label, live) {
+      const el = document.createElement('div');
+      el.className = 'notes-section';
+      el.textContent = label;
+      if (live) {
+        const dot = document.createElement('span');
+        dot.className = 'live';
+        dot.textContent = ' \u2022 listening';
+        el.appendChild(dot);
+      }
+      notesBody.appendChild(el);
+    }
+
+    function notesItems(points) {
+      points.forEach((text, index) => {
+        const row = document.createElement('div');
+        row.className = 'note-item';
+        const num = document.createElement('span');
+        num.className = 'note-num';
+        num.textContent = String(index + 1);
+        const body = document.createElement('span');
+        body.className = 'note-text';
+        body.textContent = text;
+        row.appendChild(num);
+        row.appendChild(body);
+        notesBody.appendChild(row);
+      });
+    }
+
+    function renderNotesContent() {
+      notesBody.textContent = '';
+      const s = notesState;
+      const hasDraft = s.active || s.draft.length > 0;
+
+      if (hasDraft) {
+        notesSection('New note', s.active);
+        if (s.draft.length) notesItems(s.draft);
+        else {
+          const hint = document.createElement('div');
+          hint.className = 'notes-empty';
+          hint.textContent = 'Say your first point...';
+          notesBody.appendChild(hint);
+        }
+        notesCount.textContent = s.draft.length + '/' + s.max;
+      } else {
+        notesCount.textContent = s.saved_total ? s.saved_total + ' saved' : '';
+      }
+
+      s.saved.forEach((sheet) => {
+        notesSection('Saved \u00b7 ' + sheet.title, false);
+        notesItems(sheet.points);
+      });
+
+      if (!hasDraft && !s.saved.length) {
+        const empty = document.createElement('div');
+        empty.className = 'notes-empty';
+        empty.textContent = 'No notes yet. Say "sudo add a note".';
+        notesBody.appendChild(empty);
+      }
+
+      notesBody.scrollTop = 0;
+    }
+
+    function applyNotesVisibility() {
+      const show = (notesState.visible || todoState.visible) && !textMode;
+      notesCard.style.display = show ? 'flex' : 'none';
+      document.body.classList.toggle('notes-open', show);
+
+      // Make the window wider (to the left) while the card is open
+      if (windowController && show !== lastNotesShown) {
+        lastNotesShown = show;
+        windowController.setNotesCard(show);
+      }
+    }
+
+    function handleNotesChanged(json) {
+      if (json === lastNotesJson) return;
+      lastNotesJson = json;
+      console.log("Notes updated:", json);
+
+      try {
+        notesState = Object.assign(
+          { visible: false, active: false, max: 10, draft: [], saved: [], saved_total: 0 },
+          JSON.parse(json)
+        );
+      } catch (e) {
+        return;
+      }
+
+      if (notesState.visible) cardSource = 'notes';
+      renderCard();
+      applyNotesVisibility();
+    }
+
+    // ----- To-do list (uses the same card on the left) -----
+    let todoState = { visible: false, tasks: [], done: 0, total: 0 };
+    let cardSource = 'notes';      // which list the card shows: 'notes' or 'todo'
+    let lastTodoJson = null;
+    const notesTitle = document.getElementById('notes-title');
+
+    function showingTodo() {
+      return todoState.visible && (cardSource === 'todo' || !notesState.visible);
+    }
+
+    function renderTodoContent() {
+      notesBody.textContent = '';
+      notesTitle.textContent = 'TO-DO';
+      notesCount.textContent = todoState.total ? todoState.done + '/' + todoState.total + ' done' : '';
+
+      todoState.tasks.forEach((task, index) => {
+        const row = document.createElement('div');
+        row.className = 'todo-item' + (task.done ? ' done' : '');
+        const box = document.createElement('span');
+        box.className = 'todo-box';
+        box.textContent = '\u2713';
+        const text = document.createElement('span');
+        text.className = 'note-text';
+        text.textContent = task.text;
+        row.appendChild(box);
+        row.appendChild(text);
+        row.addEventListener('click', () => {
+          if (bridgeReady && assistantBridge && assistantBridge.toggleTodo) assistantBridge.toggleTodo(index + 1);
+        });
+        notesBody.appendChild(row);
+      });
+
+      if (!todoState.tasks.length) {
+        const empty = document.createElement('div');
+        empty.className = 'notes-empty';
+        empty.textContent = 'No tasks yet. Say "sudo add task buy milk".';
+        notesBody.appendChild(empty);
+      }
+    }
+
+    function renderCard() {
+      if (showingTodo()) {
+        renderTodoContent();
+      } else {
+        notesTitle.textContent = 'NOTES';
+        renderNotesContent();
+      }
+    }
+
+    function handleTodoChanged(json) {
+      if (json === lastTodoJson) return;
+      lastTodoJson = json;
+      console.log("To-do updated:", json);
+
+      try {
+        todoState = Object.assign({ visible: false, tasks: [], done: 0, total: 0 }, JSON.parse(json));
+      } catch (e) {
+        return;
+      }
+
+      if (todoState.visible) cardSource = 'todo';
+      renderCard();
+      applyNotesVisibility();
+    }
+
+    function closeNotesCard() {
+      if (showingTodo()) {
+        todoState.visible = false;
+        applyNotesVisibility();
+        renderCard();
+        if (bridgeReady && assistantBridge && assistantBridge.closeTodo) assistantBridge.closeTodo();
+        return;
+      }
+
+      notesState.visible = false;
+      applyNotesVisibility();
+      if (bridgeReady && assistantBridge && assistantBridge.closeNotes) assistantBridge.closeNotes();
+    }
+
+    // Backup: ask Python for the to-do list every second, in case a signal is missed.
+    setInterval(() => {
+      if (bridgeReady && assistantBridge && typeof assistantBridge.getTodo === 'function') {
+        assistantBridge.getTodo(function(json) { handleTodoChanged(json); });
+      }
+    }, 1000);
+
+    // Backup: ask Python for the notes every second, in case a signal is missed.
+    setInterval(() => {
+      if (bridgeReady && assistantBridge && typeof assistantBridge.getNotes === 'function') {
+        assistantBridge.getNotes(function(json) { handleNotesChanged(json); });
+      }
+    }, 1000);
+
+    console.log("code.html loaded: todo-v1");
   </script>
 </body></html>

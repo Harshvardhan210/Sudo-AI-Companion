@@ -47,6 +47,33 @@ def extract_wake_command(text):
     return False, ""
 
 
+def strip_wake_word(text):
+    """
+    Like extract_wake_command, but keeps the rest of the text exactly as typed
+    or spoken (capital letters and punctuation).
+
+    "Sudo, save notes" -> (True, "save notes")
+    "buy milk"         -> (False, "buy milk")
+    """
+
+    words = text.strip().split()
+
+    if not words:
+        return False, ""
+
+    first = re.sub(r"[^\w]", "", words[0].lower())
+
+    if first in WAKE_WORDS:
+        return True, " ".join(words[1:]).strip()
+
+    if len(words) >= 2:
+        two = re.sub(r"[^\w\s]", "", " ".join(words[:2]).lower())
+        if two in WAKE_PHRASES:
+            return True, " ".join(words[2:]).strip()
+
+    return False, text.strip()
+
+
 def clean_command(text):
     """Lowercase and remove punctuation so the command handler can match it."""
 
@@ -127,9 +154,14 @@ def listen_continuously(should_stop, is_paused, is_expecting_answer=None):
 
             heard_wake, command = extract_wake_command(text)
 
-            # The assistant asked a question: this phrase is the answer.
+            # The assistant asked a question (reminder name) or is taking
+            # notes: this phrase is the answer. The wake word is kept in the
+            # text, so "sudo save notes" can be told apart from a note point.
             if is_expecting_answer and is_expecting_answer():
-                answer = command if heard_wake else clean_command(text)
+                if heard_wake and not command:
+                    continue            # just "sudo": ignore
+
+                answer = clean_command(text)
                 if answer:
                     follow_up_until = 0.0
                     yield answer

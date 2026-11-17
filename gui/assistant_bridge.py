@@ -1,13 +1,14 @@
 import json
-import re
 import time
 
 from PySide6.QtCore import QObject, QThread, QTimer, Signal, Slot
 
-from assistant.voice_input import listen_continuously, WAKE_WORDS
+from assistant.voice_input import listen_continuously
 from assistant.command_handler import process_command
 from assistant.voice_output import speak
 from features.reminder import reminders, PENDING_SECONDS
+from features.notes import notes, NOTE_IDLE_SECONDS
+from features.todo import todos, PENDING_SECONDS as TODO_PENDING_SECONDS
 
 
 # Speak the answer aloud for commands typed in the search bar?
@@ -38,9 +39,9 @@ class VoiceWorker(QThread):
         """Stop picking up speech (while a command runs / the assistant talks)."""
         self._paused = True
 
-    def resume(self):
+    def resume(self, delay=0.8):
         """Start listening again (with a short delay so the echo is ignored)."""
-        self._ignore_until = time.time() + 0.8
+        self._ignore_until = time.time() + delay
         self._paused = False
 
     def _should_stop(self):
@@ -79,6 +80,8 @@ class AssistantBridge(QObject):
     remindersChanged = Signal(str)   # JSON list of active reminders (for the countdown)
     reminderDue = Signal(str)        # a reminder's time is up (name)
     reminderDone = Signal(str)       # finished speaking the reminder name
+    notesChanged = Signal(str)       # JSON: the notes card (draft + saved notes)
+    todoChanged = Signal(str)        # JSON: the to-do card (tasks)
 
     def __init__(self):
         super().__init__()
@@ -86,6 +89,8 @@ class AssistantBridge(QObject):
 
         # Checks twice a second for finished reminders.
         self._last_reminder_version = 0
+        self._last_notes_version = 0
+        self._last_todo_version = 0
         self.reminder_timer = QTimer(self)
         self.reminder_timer.setInterval(500)
         self.reminder_timer.timeout.connect(self._reminder_tick)
@@ -106,6 +111,66 @@ class AssistantBridge(QObject):
         """The page asks for the current reminders (backup for the signal)."""
         return json.dumps(reminders.snapshot())
 
+    # ------------------------------------------------------------------
+    # Notes card
+    # ------------------------------------------------------------------
+
+    def _sync_notes(self):
+        """Send the notes to the page when they changed."""
+        if notes.version != self._last_notes_version:
+            self._last_notes_version = notes.version
+            self.notesChanged.emit(notes.snapshot_json())
+
+    @Slot()
+    def requestNotes(self):
+        """Called by the page when it loads."""
+        self._last_notes_version = notes.version
+        self.notesChanged.emit(notes.snapshot_json())
+
+    @Slot(result=str)
+    def getNotes(self):
+        """The page asks for the notes (backup for the signal)."""
+        return notes.snapshot_json()
+
+    @Slot()
+    def closeNotes(self):
+        """The X button on the notes card."""
+        notes.close_card()
+        self._sync_notes()
+
+    # ------------------------------------------------------------------
+    # To-do card
+    # ------------------------------------------------------------------
+
+    def _sync_todo(self):
+        """Send the to-do list to the page when it changed."""
+        if todos.version != self._last_todo_version:
+            self._last_todo_version = todos.version
+            self.todoChanged.emit(todos.snapshot_json())
+
+    @Slot()
+    def requestTodo(self):
+        """Called by the page when it loads."""
+        self._last_todo_version = todos.version
+        self.todoChanged.emit(todos.snapshot_json())
+
+    @Slot(result=str)
+    def getTodo(self):
+        """The page asks for the to-do list (backup for the signal)."""
+        return todos.snapshot_json()
+
+    @Slot()
+    def closeTodo(self):
+        """The X button on the card while it shows the to-do list."""
+        todos.close_card()
+        self._sync_todo()
+
+    @Slot(int)
+    def toggleTodo(self, number):
+        """Clicking a task on the card ticks / un-ticks it."""
+        todos.toggle(number)
+        self._sync_todo()
+
     @Slot()
     def requestReminders(self):
         """Called by the page when it loads, to get the current list."""
@@ -114,6 +179,10 @@ class AssistantBridge(QObject):
 
     def _reminder_tick(self):
         # Nobody answered "What should I call this reminder?" in time.
+        # The to-do card closes by itself a few seconds after a change.
+        if todos.auto_hide():
+            self._sync_todo()
+
         expired = reminders.pop_expired_pending()
         if expired:
             message = "I didn't hear a name, so I used the default. " + expired
@@ -192,11 +261,7 @@ class AssistantBridge(QObject):
         """Command typed in the search bar (text command mode)."""
         command = (text or "").strip()
 
-        # Allow typing the wake word too: "sudo open notepad"
-        parts = command.split(None, 1)
-        if parts and re.sub(r"[^\w]", "", parts[0].lower()) in WAKE_WORDS:
-            command = parts[1].strip() if len(parts) > 1 else ""
-
+        # (A typed "sudo ..." is understood by process_command itself.)
         if not command:
             self.assistantResponse.emit("Please type a command.")
             return
@@ -214,11 +279,18 @@ class AssistantBridge(QObject):
             response = process_command(command)
             self.assistantResponse.emit(response)
             self._sync_reminders()
+            self._sync_notes()
+            self._sync_todo()
 
-            # The assistant asked for a reminder name: the next spoken phrase
-            # is the answer (no "sudo" needed).
-            if reminders.has_pending() and worker is not None and worker.isRunning():
-                worker.expect_answer(PENDING_SECONDS)
+            # While a reminder name is expected, or while taking notes, the next
+            # spoken phrase is the answer / the next point (no "sudo" needed).
+            if worker is not None and worker.isRunning():
+                if reminders.has_pending():
+                    worker.expect_answer(PENDING_SECONDS)
+                elif todos.has_pending():
+                    worker.expect_answer(TODO_PENDING_SECONDS)
+                elif notes.active:
+                    worker.expect_answer(NOTE_IDLE_SECONDS)
 
         except Exception as error:
             print("Command error:", error)
@@ -231,8 +303,16 @@ class AssistantBridge(QObject):
             )
 
     def _speak_response(self, response, worker):
+        # Replies from the notes feature can choose what to say:
+        # speech=None -> say the reply, "" -> stay silent, text -> say that.
+        speech = getattr(response, "speech", None)
+        quiet = speech == ""
+
         try:
-            if "Found " in response:
+            if speech is not None:
+                if speech:
+                    speak(speech)
+            elif "Found " in response:
                 speak("I found matching files. Check your screen.")
             elif "\n" in response:
                 speak("Please check the screen for the available commands.")
@@ -240,9 +320,10 @@ class AssistantBridge(QObject):
                 speak(response)
 
         finally:
-            # Listen for the next "sudo ..." command.
+            # Listen for the next command (almost immediately after a silent
+            # reply, so note points can follow each other quickly).
             if worker is not None and worker.isRunning():
-                worker.resume()
+                worker.resume(0.15 if quiet else 0.8)
 
     @Slot(str)
     def handle_listening_error(self, message):

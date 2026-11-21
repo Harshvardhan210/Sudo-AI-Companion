@@ -131,7 +131,7 @@ def format_duration(seconds):
 
 
 def _clean_name(text):
-    text = re.sub(r"[^\w\s'&-]", " ", text.lower())
+    text = re.sub(r"[^\w\s'&\-\u0900-\u097F]|[\u0964\u0965]", " ", text.lower())
     text = " ".join(text.split())
 
     # Remove joining words at the start/end: "to drink water" -> "drink water"

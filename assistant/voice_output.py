@@ -42,6 +42,9 @@ VOICES = [
     ("en-GB-RyanNeural", "Ryan, British English", "male"),
 ]
 
+# Text written in Devanagari is spoken with a Hindi voice (the English voices skip it)
+HINDI_VOICES = {"female": "hi-IN-SwaraNeural", "male": "hi-IN-MadhurNeural"}
+
 SETTINGS_FILE = Path(__file__).with_name("voice_settings.json")
 CACHE_DIR = Path(tempfile.gettempdir()) / "sudo_assistant_tts"
 
@@ -93,8 +96,21 @@ def _clean_old_cache(max_age_days=3):
         pass
 
 
+def _voice_for(text):
+    """The voice to use for this text: Hindi voice for Devanagari, otherwise your choice."""
+
+    letters = [c for c in text if c.isalpha()]
+    devanagari = sum(1 for c in letters if "\u0900" <= c <= "\u097F")
+
+    if letters and devanagari / len(letters) > 0.3:
+        gender = next((v[2] for v in VOICES if v[0] == settings["voice"]), "female")
+        return HINDI_VOICES.get(gender, HINDI_VOICES["female"])
+
+    return settings["voice"]
+
+
 def _audio_path(text):
-    key = f"{settings['voice']}|{settings['rate']}|{settings['pitch']}|{text}"
+    key = f"{_voice_for(text)}|{settings['rate']}|{settings['pitch']}|{text}"
     name = hashlib.sha1(key.encode("utf-8")).hexdigest()
     return CACHE_DIR / f"{name}.mp3"
 
@@ -102,7 +118,7 @@ def _audio_path(text):
 async def _generate(text, path):
     communicate = edge_tts.Communicate(
         text,
-        settings["voice"],
+        _voice_for(text),
         rate=f"{int(settings['rate']):+d}%",
         pitch=f"{int(settings['pitch']):+d}Hz",
     )

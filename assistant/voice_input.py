@@ -3,6 +3,8 @@ import time
 
 import speech_recognition as sr
 
+from assistant import wake_mode
+
 
 # ---------------------------------------------------------------------------
 # Wake word settings
@@ -12,6 +14,7 @@ import speech_recognition as sr
 WAKE_WORDS = {
     "sudo", "sodo", "pseudo", "sudoh", "sudu", "sudoo",
     "suedo", "soodoo", "sudho", "sado",
+    "सूडो", "सुडो", "सुदो", "सूदो", "सुडू", "सूडू",     # said in Hindi
 }
 WAKE_PHRASES = {          # when it is heard as two separate words
     "su do", "sue do", "soo do", "sue doo", "soo doo", "sue dough",
@@ -20,6 +23,15 @@ WAKE_PHRASES = {          # when it is heard as two separate words
 # After saying only "sudo", the next phrase is accepted as the command
 # for this many seconds.
 FOLLOW_UP_SECONDS = 6
+
+# Speech languages: English (India) first, then Hindi if the first result is not a command
+LANGUAGES = ("en-IN", "hi-IN")
+
+# Only try the second language for sounds at least this long (seconds)
+SECOND_PASS_MIN_SECONDS = 0.6
+
+# Punctuation to remove. Devanagari letters and vowel signs are kept.
+_PUNCTUATION = re.compile(r"[^\w\s'\u0900-\u097F]|[\u0964\u0965]")
 
 
 def extract_wake_command(text):
@@ -32,7 +44,7 @@ def extract_wake_command(text):
     "open notepad"      -> (False, "")
     """
 
-    cleaned = re.sub(r"[^\w\s']", " ", text.lower())
+    cleaned = _PUNCTUATION.sub(" ", text.lower())
     words = cleaned.split()
 
     if not words:
@@ -61,13 +73,13 @@ def strip_wake_word(text):
     if not words:
         return False, ""
 
-    first = re.sub(r"[^\w]", "", words[0].lower())
+    first = _PUNCTUATION.sub("", words[0].lower())
 
     if first in WAKE_WORDS:
         return True, " ".join(words[1:]).strip()
 
     if len(words) >= 2:
-        two = re.sub(r"[^\w\s]", "", " ".join(words[:2]).lower())
+        two = _PUNCTUATION.sub("", " ".join(words[:2]).lower())
         if two in WAKE_PHRASES:
             return True, " ".join(words[2:]).strip()
 
@@ -77,8 +89,82 @@ def strip_wake_word(text):
 def clean_command(text):
     """Lowercase and remove punctuation so the command handler can match it."""
 
-    cleaned = re.sub(r"[^\w\s']", " ", text.lower())
+    cleaned = _PUNCTUATION.sub(" ", text.lower())
     return " ".join(cleaned.split())
+
+
+def _transcripts(recognizer, audio, language):
+    """All guesses Google gives for the audio in one language (best first)."""
+
+    result = recognizer.recognize_google(audio, language=language, show_all=True)
+
+    guesses = []
+
+    if isinstance(result, dict):
+        for item in result.get("alternative", []):
+            transcript = item.get("transcript")
+            if transcript:
+                guesses.append(transcript)
+
+    return guesses
+
+
+def _audio_seconds(audio):
+    try:
+        return len(audio.frame_data) / (audio.sample_rate * audio.sample_width)
+    except Exception:
+        return 99.0
+
+
+def recognize_phrase(recognizer, audio, expecting, follow_up_active):
+    """
+    Turn the audio into text.
+
+    English is tried first. If nothing in it is a command (and Hindi is on), the
+    same audio is tried as Hindi. While the assistant expects an answer (a note
+    point, a reminder name) the first guess is used as it is.
+    Returns the text, or None if nothing was understood.
+    """
+
+    def usable(text):
+        heard_wake, _ = strip_wake_word(text)
+
+        if heard_wake or follow_up_active:
+            return True
+
+        if wake_mode.wake_required():
+            return False
+
+        return wake_mode.looks_like_command(text)
+
+    first = _transcripts(recognizer, audio, LANGUAGES[0])
+
+    if expecting:
+        if first:
+            return first[0]
+    else:
+        for guess in first:
+            if usable(guess):
+                return guess
+
+    hindi = []
+
+    if (wake_mode.hindi_enabled() and len(LANGUAGES) > 1
+            and _audio_seconds(audio) >= SECOND_PASS_MIN_SECONDS):
+        hindi = _transcripts(recognizer, audio, LANGUAGES[1])
+
+        if expecting:
+            return hindi[0] if hindi and not first else (first[0] if first else None)
+
+        for guess in hindi:
+            if usable(guess):
+                return guess
+
+    # Nothing looked like a command: return the best guess (it will be ignored)
+    if first:
+        return first[0]
+
+    return hindi[0] if hindi else None
 
 
 def listen_continuously(
@@ -142,7 +228,10 @@ def _listen_loop(recognizer, source, should_stop, is_paused, is_expecting_answer
     print("\nAssistant: Calibrating microphone...")
     recognizer.adjust_for_ambient_noise(source, duration=1)
 
-    print('Assistant: Listening continuously. Say "sudo <command>".')
+    if wake_mode.wake_required():
+        print('Assistant: Listening continuously. Say "sudo <command>".')
+    else:
+        print('Assistant: Listening continuously. "sudo" is optional (English or Hindi).')
 
     while not should_stop():
 
@@ -168,10 +257,14 @@ def _listen_loop(recognizer, source, should_stop, is_paused, is_expecting_answer
         if is_paused():
             continue
 
+        expecting = bool(is_expecting_answer and is_expecting_answer())
+
         try:
-            text = recognizer.recognize_google(
+            text = recognize_phrase(
+                recognizer,
                 audio,
-                language="en-IN"
+                expecting,
+                follow_up_active=time.time() < follow_up_until,
             )
 
         except sr.UnknownValueError:
@@ -181,6 +274,9 @@ def _listen_loop(recognizer, source, should_stop, is_paused, is_expecting_answer
             print("Assistant: Speech recognition service unavailable.")
             print("Error:", error)
             time.sleep(1)
+            continue
+
+        if not text:
             continue
 
         if should_stop():
@@ -219,7 +315,14 @@ def _listen_loop(recognizer, source, should_stop, is_paused, is_expecting_answer
             if command:
                 yield command
 
-        # Anything else is ignored (no wake word).
+        # No "sudo", but it clearly is a command (English or Hindi)
+        elif not wake_mode.wake_required() and wake_mode.looks_like_command(text):
+            command = clean_command(text)
+
+            if command:
+                yield command
+
+        # Anything else is ignored (normal conversation).
 
 
 def listen_for_command():

@@ -95,6 +95,15 @@ def clean_name(text):
 
     text = re.sub(r"^(?:name it|call it|it's called|its called|the name is|name is|called|named)\s+", "", text.strip(), flags=_FLAGS)
     text = re.sub(r"\s+routine$", "", text, flags=_FLAGS)
+
+    # A name said in Hindi: spell it with English letters
+    if re.search(r"[\u0900-\u097F]", text):
+        try:
+            from assistant.hindi_commands import romanize_text
+            text = romanize_text(text)
+        except Exception:
+            pass
+
     text = re.sub(r"[^a-z0-9 ]", " ", text.lower())
     return " ".join(text.split())[:MAX_NAME_LENGTH].strip()
 

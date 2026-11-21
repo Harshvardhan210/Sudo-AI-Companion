@@ -16,7 +16,7 @@ from features.routines import routines
 
 from assistant.voice_input import strip_wake_word
 
-from assistant import audio_devices
+from assistant import audio_devices, hindi_commands, wake_mode
 
 from assistant.voice_output import (
     next_voice,
@@ -112,6 +112,22 @@ def process_command(command):
         return todos.handle_pending(without_wake if heard_wake else original)
 
     # -----------------------------
+    # HINDI / HINGLISH: turn it into the English command first
+    # -----------------------------
+
+    # (While taking notes or creating a routine, what you say without "sudo"
+    # is note text / steps, so it is not translated.)
+    in_session = notes.active or routines.busy()
+
+    if wake_mode.hindi_enabled() and not (in_session and not heard_wake):
+        translated = hindi_commands.to_english(without_wake if heard_wake else original)
+
+        if translated:
+            original = translated
+            without_wake = translated
+            command = translated.lower()
+
+    # -----------------------------
     # ROUTINES (create routine / run work routine / close work routine)
     # -----------------------------
 
@@ -178,6 +194,19 @@ def process_command(command):
 
     if web_response is not None:
         return web_response
+
+    # -----------------------------
+    # WAKE WORD ("sudo" optional or required)
+    # -----------------------------
+
+    if command in ["wake word off", "always listen", "listen without sudo",
+                   "no wake word", "stop requiring sudo", "hands free mode",
+                   "hands-free mode", "sudo is optional"]:
+        return Reply(wake_mode.set_wake_required(False))
+
+    if command in ["wake word on", "require wake word", "use wake word",
+                   "only listen for sudo", "sudo required", "always need sudo"]:
+        return Reply(wake_mode.set_wake_required(True))
 
     # -----------------------------
     # EARPHONES / MICROPHONE
@@ -275,6 +304,13 @@ NOTES:
 - Save notes
 - Delete last point
 - Cancel notes
+
+HINDI AND ENGLISH (with or without sudo):
+- Volume ko kam karo / Awaaz badhao
+- Notepad kholo / Chrome band karo
+- 5 minute baad yaad dilao
+- Work routine shuru karo
+- Wake word off (sudo not needed) / Wake word on
 
 EARPHONES / MICROPHONE:
 - Use headphones / Use earphones

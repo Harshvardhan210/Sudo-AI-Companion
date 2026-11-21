@@ -81,7 +81,13 @@ def clean_command(text):
     return " ".join(cleaned.split())
 
 
-def listen_continuously(should_stop, is_paused, is_expecting_answer=None):
+def listen_continuously(
+    should_stop,
+    is_paused,
+    is_expecting_answer=None,
+    device_index=None,
+    on_fallback=None,
+):
     """
     Keep the microphone open and yield a command every time the user says
     one that starts with the wake word ("sudo ...").
@@ -92,98 +98,128 @@ def listen_continuously(should_stop, is_paused, is_expecting_answer=None):
     is_expecting_answer() -> True while the assistant has asked a question
                      (like a reminder name). The next phrase is then taken
                      as the answer, without needing the wake word.
+    device_index  -> which microphone to use (None = the system default).
+                     If that microphone fails or is unplugged, the default
+                     microphone is used instead.
+    on_fallback() -> called when it switched to the default microphone
     """
 
     recognizer = sr.Recognizer()
     recognizer.dynamic_energy_threshold = True
     recognizer.pause_threshold = 0.8
 
+    candidates = [device_index] if device_index is None else [device_index, None]
+
+    for position, index in enumerate(candidates):
+
+        try:
+            with sr.Microphone(device_index=index) as source:
+                yield from _listen_loop(
+                    recognizer, source, should_stop, is_paused, is_expecting_answer
+                )
+            return
+
+        except OSError as error:
+            # No microphone at all (or the last choice failed): tell the caller.
+            if position == len(candidates) - 1:
+                raise
+
+            print("Assistant: That microphone is not available, using the default one.")
+            print("Error:", error)
+
+            if on_fallback:
+                on_fallback()
+
+            if should_stop():
+                return
+
+
+def _listen_loop(recognizer, source, should_stop, is_paused, is_expecting_answer):
+    """Listen on an open microphone and yield commands."""
+
     follow_up_until = 0.0
 
-    # OSError (no microphone) is raised to the caller on purpose.
-    with sr.Microphone() as source:
+    print("\nAssistant: Calibrating microphone...")
+    recognizer.adjust_for_ambient_noise(source, duration=1)
 
-        print("\nAssistant: Calibrating microphone...")
-        recognizer.adjust_for_ambient_noise(source, duration=1)
+    print('Assistant: Listening continuously. Say "sudo <command>".')
 
-        print('Assistant: Listening continuously. Say "sudo <command>".')
+    while not should_stop():
 
-        while not should_stop():
+        if is_paused():
+            time.sleep(0.1)
+            continue
 
-            if is_paused():
-                time.sleep(0.1)
-                continue
+        # A short timeout lets us check the Stop button every second.
+        try:
+            audio = recognizer.listen(
+                source,
+                timeout=1,
+                phrase_time_limit=8
+            )
+        except sr.WaitTimeoutError:
+            continue
 
-            # A short timeout lets us check the Stop button every second.
-            try:
-                audio = recognizer.listen(
-                    source,
-                    timeout=1,
-                    phrase_time_limit=8
-                )
-            except sr.WaitTimeoutError:
-                continue
+        # Throw away audio captured while stopped or while the
+        # assistant was busy/speaking.
+        if should_stop():
+            break
 
-            # Throw away audio captured while stopped or while the
-            # assistant was busy/speaking.
-            if should_stop():
-                break
+        if is_paused():
+            continue
 
-            if is_paused():
-                continue
+        try:
+            text = recognizer.recognize_google(
+                audio,
+                language="en-IN"
+            )
 
-            try:
-                text = recognizer.recognize_google(
-                    audio,
-                    language="en-IN"
-                )
+        except sr.UnknownValueError:
+            continue
 
-            except sr.UnknownValueError:
-                continue
+        except sr.RequestError as error:
+            print("Assistant: Speech recognition service unavailable.")
+            print("Error:", error)
+            time.sleep(1)
+            continue
 
-            except sr.RequestError as error:
-                print("Assistant: Speech recognition service unavailable.")
-                print("Error:", error)
-                time.sleep(1)
-                continue
+        if should_stop():
+            break
 
-            if should_stop():
-                break
+        print("Heard:", text)
 
-            print("Heard:", text)
+        heard_wake, command = extract_wake_command(text)
 
-            heard_wake, command = extract_wake_command(text)
+        # The assistant asked a question (reminder name) or is taking
+        # notes: this phrase is the answer. The wake word is kept in the
+        # text, so "sudo save notes" can be told apart from a note point.
+        if is_expecting_answer and is_expecting_answer():
+            if heard_wake and not command:
+                continue            # just "sudo": ignore
 
-            # The assistant asked a question (reminder name) or is taking
-            # notes: this phrase is the answer. The wake word is kept in the
-            # text, so "sudo save notes" can be told apart from a note point.
-            if is_expecting_answer and is_expecting_answer():
-                if heard_wake and not command:
-                    continue            # just "sudo": ignore
-
-                answer = clean_command(text)
-                if answer:
-                    follow_up_until = 0.0
-                    yield answer
-                continue
-
-            if heard_wake and command:
+            answer = clean_command(text)
+            if answer:
                 follow_up_until = 0.0
+                yield answer
+            continue
+
+        if heard_wake and command:
+            follow_up_until = 0.0
+            yield command
+
+        elif heard_wake:
+            # Only "sudo" was said: wait for the command in the next phrase.
+            follow_up_until = time.time() + FOLLOW_UP_SECONDS
+            print("Assistant: Yes? Say your command.")
+
+        elif time.time() < follow_up_until:
+            follow_up_until = 0.0
+            command = clean_command(text)
+
+            if command:
                 yield command
 
-            elif heard_wake:
-                # Only "sudo" was said: wait for the command in the next phrase.
-                follow_up_until = time.time() + FOLLOW_UP_SECONDS
-                print("Assistant: Yes? Say your command.")
-
-            elif time.time() < follow_up_until:
-                follow_up_until = 0.0
-                command = clean_command(text)
-
-                if command:
-                    yield command
-
-            # Anything else is ignored (no wake word).
+        # Anything else is ignored (no wake word).
 
 
 def listen_for_command():

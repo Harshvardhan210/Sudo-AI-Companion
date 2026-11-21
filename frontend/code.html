@@ -733,6 +733,13 @@
 
             safeConnect("notesChanged", function(json) { handleNotesChanged(json); });
             safeConnect("todoChanged",  function(json) { handleTodoChanged(json); });
+            safeConnect("routinesChanged", function(json) { handleRoutinesChanged(json); });
+
+            try {
+                assistantBridge.requestRoutines();
+            } catch (e) {
+                console.error("requestRoutines failed - is gui/assistant_bridge.py the latest version?", e);
+            }
 
             try {
                 assistantBridge.requestTodo();
@@ -1773,7 +1780,7 @@ function activateListeningVisuals() {
     }
 
     function applyNotesVisibility() {
-      const show = (notesState.visible || todoState.visible) && !textMode;
+      const show = (notesState.visible || todoState.visible || routineState.visible) && !textMode;
       notesCard.style.display = show ? 'flex' : 'none';
       document.body.classList.toggle('notes-open', show);
 
@@ -1809,8 +1816,80 @@ function activateListeningVisuals() {
     let lastTodoJson = null;
     const notesTitle = document.getElementById('notes-title');
 
+    // Which list the left card shows right now: 'notes', 'todo' or 'routine'
+    function activeCard() {
+      const visible = { notes: notesState.visible, todo: todoState.visible, routine: routineState.visible };
+      if (visible[cardSource]) return cardSource;
+      return ['todo', 'routine', 'notes'].find((k) => visible[k]) || 'notes';
+    }
+
     function showingTodo() {
-      return todoState.visible && (cardSource === 'todo' || !notesState.visible);
+      return activeCard() === 'todo';
+    }
+
+    // ----- Routines (same card) -----
+    let routineState = { visible: false, stage: null, max_steps: 15, name: '', steps: [], routines: [] };
+    let lastRoutinesJson = null;
+
+    function renderRoutineContent() {
+      notesBody.textContent = '';
+      const s = routineState;
+
+      if (s.stage) {
+        // creating a routine
+        notesTitle.textContent = 'ROUTINE';
+        notesCount.textContent = s.stage === 'steps' ? s.steps.length + '/' + s.max_steps : '';
+        notesSection(s.name ? 'New routine \u00b7 ' + s.name : 'New routine', true);
+
+        if (s.stage === 'name') {
+          const hint = document.createElement('div');
+          hint.className = 'notes-empty';
+          hint.textContent = 'Say the name of this routine...';
+          notesBody.appendChild(hint);
+        } else if (!s.steps.length) {
+          const hint = document.createElement('div');
+          hint.className = 'notes-empty';
+          hint.textContent = 'Say: add open chrome, open youtube';
+          notesBody.appendChild(hint);
+        } else {
+          notesItems(s.steps);
+        }
+        return;
+      }
+
+      notesTitle.textContent = 'ROUTINES';
+      notesCount.textContent = s.routines.length ? s.routines.length + ' saved' : '';
+
+      s.routines.forEach((routine) => {
+        notesSection(routine.name + ' \u00b7 ' + routine.steps.length + ' step' + (routine.steps.length === 1 ? '' : 's'), false);
+        notesItems(routine.steps);
+      });
+
+      if (!s.routines.length) {
+        const empty = document.createElement('div');
+        empty.className = 'notes-empty';
+        empty.textContent = 'No routines yet. Say "sudo create routine".';
+        notesBody.appendChild(empty);
+      }
+    }
+
+    function handleRoutinesChanged(json) {
+      if (json === lastRoutinesJson) return;
+      lastRoutinesJson = json;
+      console.log("Routines updated:", json);
+
+      try {
+        routineState = Object.assign(
+          { visible: false, stage: null, max_steps: 15, name: '', steps: [], routines: [] },
+          JSON.parse(json)
+        );
+      } catch (e) {
+        return;
+      }
+
+      if (routineState.visible) cardSource = 'routine';
+      renderCard();
+      applyNotesVisibility();
     }
 
     function renderTodoContent() {
@@ -1844,8 +1923,12 @@ function activateListeningVisuals() {
     }
 
     function renderCard() {
-      if (showingTodo()) {
+      const card = activeCard();
+
+      if (card === 'todo') {
         renderTodoContent();
+      } else if (card === 'routine') {
+        renderRoutineContent();
       } else {
         notesTitle.textContent = 'NOTES';
         renderNotesContent();
@@ -1869,7 +1952,17 @@ function activateListeningVisuals() {
     }
 
     function closeNotesCard() {
-      if (showingTodo()) {
+      const card = activeCard();
+
+      if (card === 'routine') {
+        routineState.visible = false;
+        applyNotesVisibility();
+        renderCard();
+        if (bridgeReady && assistantBridge && assistantBridge.closeRoutines) assistantBridge.closeRoutines();
+        return;
+      }
+
+      if (card === 'todo') {
         todoState.visible = false;
         applyNotesVisibility();
         renderCard();
@@ -1881,6 +1974,13 @@ function activateListeningVisuals() {
       applyNotesVisibility();
       if (bridgeReady && assistantBridge && assistantBridge.closeNotes) assistantBridge.closeNotes();
     }
+
+    // Backup: ask Python for the routines every second, in case a signal is missed.
+    setInterval(() => {
+      if (bridgeReady && assistantBridge && typeof assistantBridge.getRoutines === 'function') {
+        assistantBridge.getRoutines(function(json) { handleRoutinesChanged(json); });
+      }
+    }, 1000);
 
     // Backup: ask Python for the to-do list every second, in case a signal is missed.
     setInterval(() => {
@@ -1896,6 +1996,6 @@ function activateListeningVisuals() {
       }
     }, 1000);
 
-    console.log("code.html loaded: todo-v1");
+    console.log("code.html loaded: routines-v1");
   </script>
 </body></html>

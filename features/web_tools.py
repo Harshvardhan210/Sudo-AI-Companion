@@ -128,6 +128,11 @@ def _as_url(target):
     target = re.sub(r"\s+dot\s+", ".", target)       # "github dot com" -> "github.com"
     target = re.sub(r"\s*\.\s*", ".", target)         # "github . com"  -> "github.com"
 
+    # Speech recognition often drops the dot: "github com" -> "github.com"
+    target = re.sub(
+        r"^([a-z0-9-]+)\s+(com|org|net|edu|gov|dev|app|info|xyz|io)$", r"\1.\2", target
+    )
+
     if target in KNOWN_SITES:
         return KNOWN_SITES[target]
 
@@ -136,6 +141,11 @@ def _as_url(target):
         return target if target.startswith("http") else "https://" + target
 
     return None
+
+
+def is_website(target):
+    """True if "open <target>" would open a website (not an app or folder)."""
+    return _as_url(target) is not None
 
 
 # ----------------------------------------------------------------------------

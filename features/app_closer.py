@@ -34,7 +34,6 @@ APP_ALIASES = {
     "microsoft edge": ["msedge.exe"],
     "firefox": ["firefox.exe"],
     "brave": ["brave.exe"],
-    "opera": ["opera.exe"],
     "vs code": ["code.exe"],
     "vscode": ["code.exe"],
     "visual studio code": ["code.exe"],

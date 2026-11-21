@@ -1,3 +1,5 @@
+import time
+
 from features.app_launcher import open_application
 
 from features.reminder import reminders
@@ -10,7 +12,11 @@ from features.notes import notes, Reply
 
 from features.todo import todos
 
+from features.routines import routines
+
 from assistant.voice_input import strip_wake_word
+
+from assistant import audio_devices
 
 from assistant.voice_output import (
     next_voice,
@@ -41,6 +47,44 @@ from features.system_control import (
 # Stores pending shutdown/restart confirmation
 pending_action = None
 
+# Pause between the steps of a routine (seconds), so apps have time to start
+ROUTINE_STEP_DELAY = 0.8
+
+
+def _show_only(owner):
+    """Only one card (notes, to-do or routines) is shown on the left at a time."""
+
+    cards = {"notes": notes, "todo": todos, "routines": routines}
+
+    if not cards[owner].card_open:
+        return
+
+    for name, manager in cards.items():
+        if name != owner and manager.card_open:
+            manager.close_card()
+
+
+def _run_routine(reply):
+    """Do every step of a routine, one after the other."""
+
+    lines = []
+
+    for number, step in enumerate(reply.run_steps, 1):
+        try:
+            # "sudo" makes each step a normal command, even during a note.
+            result = str(process_command("sudo " + step)).strip().splitlines()
+            result = result[0] if result else "done"
+        except Exception as error:
+            result = f"error: {error}"
+
+        lines.append(f"{number}. {step}: {result}")
+        time.sleep(ROUTINE_STEP_DELAY)
+
+    return Reply(
+        f"Ran the {reply.run_name} routine:\n" + "\n".join(lines),
+        speech=reply.speech
+    )
+
 
 def process_command(command):
     global pending_action
@@ -68,15 +112,32 @@ def process_command(command):
         return todos.handle_pending(without_wake if heard_wake else original)
 
     # -----------------------------
+    # ROUTINES (create routine / run work routine / close work routine)
+    # -----------------------------
+
+    routine_response = routines.handle(
+        original,
+        heard_wake,
+        without_wake,
+        busy_with="taking notes" if notes.active else None
+    )
+
+    if routine_response is not None:
+        _show_only("routines")
+
+        if getattr(routine_response, "run_steps", None):
+            return _run_routine(routine_response)
+
+        return routine_response
+
+    # -----------------------------
     # NOTES (add a note / open notes / save notes)
     # -----------------------------
 
     notes_response = notes.handle(original, heard_wake, without_wake)
 
     if notes_response is not None:
-        # Only one card (notes or to-do) is shown on the left at a time.
-        if notes.card_open and todos.card_open:
-            todos.close_card()
+        _show_only("notes")
         return notes_response
 
     # -----------------------------
@@ -86,8 +147,7 @@ def process_command(command):
     todo_response = todos.handle(original, heard_wake, without_wake)
 
     if todo_response is not None:
-        if todos.card_open and notes.card_open:
-            notes.close_card()
+        _show_only("todo")
         return todo_response
 
     # From here on the wake word is not needed.
@@ -118,6 +178,30 @@ def process_command(command):
 
     if web_response is not None:
         return web_response
+
+    # -----------------------------
+    # EARPHONES / MICROPHONE
+    # -----------------------------
+
+    if command in ["use headphones", "use earphones", "use my earphones",
+                   "use my headphones", "use headset", "use my headset",
+                   "use bluetooth headset", "use earbuds", "use my earbuds"]:
+        return audio_devices.set_mode("headset")
+
+    if command in ["use laptop mic", "use laptop microphone", "use built in mic",
+                   "use built in microphone", "use the laptop mic", "use speakers",
+                   "use laptop speakers"]:
+        return audio_devices.set_mode("laptop")
+
+    if command in ["use automatic audio", "automatic audio", "auto audio",
+                   "audio auto", "use auto audio", "switch audio automatically"]:
+        return audio_devices.set_mode("auto")
+
+    if command in ["which mic are you using", "which microphone are you using",
+                   "what mic are you using", "what microphone are you using",
+                   "audio status", "which headphones are you using",
+                   "are you using my earphones", "which mic"]:
+        return Reply(audio_devices.status_text())
 
     # -----------------------------
     # ROBOT VOICE
@@ -171,6 +255,13 @@ FOLDERS:
 - Open Downloads
 - Open Pictures
 
+ROUTINES:
+- Create routine (then say its name, then: add open chrome, open youtube)
+- Close <name> routine (saves it while creating)
+- Run <name> routine
+- Close <name> routine (closes its apps, after it was saved)
+- Show routines / Delete <name> routine
+
 TO-DO LIST:
 - Add task buy milk
 - Show my tasks
@@ -184,6 +275,12 @@ NOTES:
 - Save notes
 - Delete last point
 - Cancel notes
+
+EARPHONES / MICROPHONE:
+- Use headphones / Use earphones
+- Use laptop mic
+- Use automatic audio
+- Which mic are you using
 
 ROBOT VOICE:
 - Change voice
